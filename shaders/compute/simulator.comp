@@ -1,0 +1,64 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+struct ArrayVertex {
+    uint id;
+    uint state;
+    float paintColor[4];
+};
+
+layout (set = 0, binding = 0) buffer SimulatedArray {
+    ArrayVertex[] data;
+} simulationArray;
+
+layout (set = 0, binding = 1) uniform SimulationInfo {
+    uint xSize;
+    uint ySize;
+    uint zSize;
+} simulationInfo;
+
+uint calculatePosition(uint x, uint y, uint z) {
+    return x + y*simulationInfo.xSize + z*simulationInfo.xSize*simulationInfo.ySize;
+}
+
+uint calculatePosition(ivec3 pos) {
+    return calculatePosition(pos.x, pos.y, pos.z);
+}
+
+void updateParticle(uint globalOffset) {
+    // Calculate the position in xyz format
+    uint x = globalOffset%simulationInfo.xSize;
+    uint y = globalOffset/simulationInfo.xSize%simulationInfo.ySize;
+    uint z = globalOffset/simulationInfo.xSize/simulationInfo.ySize%simulationInfo.zSize;
+
+    ArrayVertex v = simulationArray.data[globalOffset];
+    // If particle is air or it has already been updated then don't update it again.
+    if(v.id == 0 || (v.state & 0x00000001) != 0) return;
+
+    // For now we just move the particle down if possible.
+    if(y == 0) return; // Cannot move any lower
+    uint neighbourId = calculatePosition(x, y-1, z);
+    ArrayVertex lowerNeighbour = simulationArray.data[neighbourId];
+    if(lowerNeighbour.id == 0) {
+        // Empty position found below.
+        v.state |= 0x01;
+        simulationArray.data[neighbourId] = v;
+        simulationArray.data[globalOffset].id = 0;
+        simulationArray.data[globalOffset].state = 0;
+    }
+}
+
+void main() {
+    uint globalId = gl_GlobalInvocationID.x;
+    if(globalId > calculatePosition(simulationInfo.xSize, simulationInfo.ySize, simulationInfo.zSize)) return;
+
+    updateParticle(globalId);
+}
+
+void resetParticles() {
+    uint globalId = gl_GlobalInvocationID.x;
+    if(globalId > calculatePosition(simulationInfo.xSize, simulationInfo.ySize, simulationInfo.zSize)) return;
+
+    simulationArray.data[globalId].state &= 0xFFFFFFFE;
+}

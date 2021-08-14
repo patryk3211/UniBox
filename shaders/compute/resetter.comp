@@ -1,0 +1,32 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+struct ArrayVertex {
+    uint id;
+    uint state;
+    uint d1;
+    uint d2;
+    float paintColor[4];
+};
+
+layout (set = 0, binding = 0) buffer SimulatedArray {
+    ArrayVertex[] data;
+} simulationArray;
+
+layout (set = 0, binding = 1) uniform SimulationInfo {
+    uint xSize;
+    uint ySize;
+    uint zSize;
+} simulationInfo;
+
+uint calculatePosition(uint x, uint y, uint z) {
+    return x + y*simulationInfo.xSize + z*simulationInfo.xSize*simulationInfo.ySize;
+}
+
+void main() {
+    uint globalId = gl_GlobalInvocationID.x;
+    if(globalId > calculatePosition(simulationInfo.xSize, simulationInfo.ySize, simulationInfo.zSize)) return;
+
+    simulationArray.data[globalId].state &= 0xFFFFFFFE;
+}
