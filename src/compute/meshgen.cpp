@@ -1,6 +1,8 @@
 #include <compute/meshgen.hpp>
 
 #include <vk-engine/engine.hpp>
+#include <simulator/voxel.hpp>
+#include <simulator/particle.hpp>
 
 #include <spdlog/spdlog.h>
 
@@ -12,9 +14,8 @@ using namespace unibox;
 
 #define UBO_SIZE sizeof(float)*3
 #define PARTICLE_INFO_PACKET_SIZE sizeof(float)*4
-#define PARTICLE_COUNT 2
 
-#define INPUT_VERTEX_SIZE sizeof(uint)*4+sizeof(float)*4
+#define INPUT_VERTEX_SIZE sizeof(Voxel)
 #define OUTPUT_VERTEX_SIZE sizeof(float)*4*2
 
 MeshGenPipeline::MeshGenPipeline() {
@@ -45,15 +46,6 @@ MeshGenPipeline::MeshGenPipeline() {
     }
     ubo = new Buffer(/*Engine::getInstance()->padUbo(UBO_SIZE+PARTICLE_INFO_PACKET_SIZE*PARTICLE_COUNT)*/UBO_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_CPU_TO_GPU);
     this->pipeline->bindBufferToDescriptor(0, 1, ubo->getHandle(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, UBO_SIZE);
-    pib = new Buffer(PARTICLE_INFO_PACKET_SIZE*PARTICLE_COUNT, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_CPU_TO_GPU);
-    this->pipeline->bindBufferToDescriptor(0, 3, pib->getHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, PARTICLE_INFO_PACKET_SIZE*PARTICLE_COUNT);
-
-    // Store particle information into the buffer
-    float particleInfo[] = {
-        1.0f, 0.0f, 0.0f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f
-    };
-    pib->store(particleInfo, 0, PARTICLE_COUNT*PARTICLE_INFO_PACKET_SIZE);
 }
 
 MeshGenPipeline::~MeshGenPipeline() {
@@ -102,4 +94,16 @@ bool MeshGenPipeline::isExecuting() {
     VkResult res = vkGetFenceStatus(device, fence);
     if(res != VK_NOT_READY && res != VK_SUCCESS) spdlog::error("Could not get status of Mesh Generator execution fence.");
     return res == VK_NOT_READY;
+}
+
+void MeshGenPipeline::createMeshGenerationInformation() {
+    std::vector<Particle*>& particles = Particle::getParticleArray();
+
+    pib = new Buffer((PARTICLE_INFO_PACKET_SIZE)*particles.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    this->pipeline->bindBufferToDescriptor(0, 3, pib->getHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, (PARTICLE_INFO_PACKET_SIZE)*particles.size());
+
+    void* ptr = pib->map();
+    ParticleInfoPacket* pipPtr = (ParticleInfoPacket*)ptr;
+    for(int i = 0; i < particles.size(); i++) particles[i]->fillPip(pipPtr[i]);
+    pib->unmap();
 }

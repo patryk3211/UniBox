@@ -9,8 +9,10 @@
 #include <vk-engine/computepipeline.hpp>
 #include <compute/meshgen.hpp>
 #include <compute/simulator.hpp>
+#include <simulator/particle.hpp>
 
 #include <chrono>
+#include <future>
 
 #include <glm/vec4.hpp>
 
@@ -60,25 +62,22 @@ int main(int argc, char** argv) {
 
         Renderer::registerMaterial("default", default_pipeline);
     }
+    
+    auto particleLoadSync = std::async(std::launch::async, Particle::loadParticles);
 
-    cbuffer = new Buffer((sizeof(int)*2+sizeof(float)*4)*256*64*64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    MeshGenPipeline* mg = new MeshGenPipeline();
+    particleLoadSync.wait();
+    auto particleInfoSync = std::async(std::launch::async, [mg](){ mg->createMeshGenerationInformation(); });
+
+    cbuffer = new Buffer(sizeof(Voxel)*256*64*64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_CPU_TO_GPU);
     Buffer* meshBuffer = new Buffer((sizeof(float)*4*2)*256*6*64*64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_GPU_ONLY);
-
-    struct Voxel {
-        uint id;
-        uint state;
-        uint d1;
-        uint d2;
-        //float color[4];
-        glm::vec4 color;
-    };
 
     spdlog::info("Random gen start");
     void* buf = cbuffer->map();
     Voxel* voxels = (Voxel*)buf;
     for(int i = 0; i < 256*64*64; i++) {
-        voxels[i].id = std::rand()%10 == 0 ? 1 : 0;
-        voxels[i].color = glm::vec4(1.0, 1.0, 0.0, 0.5);
+        voxels[i].type = std::rand()%10 == 0 ? 1 : 0;
+        //voxels[i].paintColor = glm::vec4(1.0, 1.0, 0.0, 0.5);
         /*voxels[i].color[0] = 1;
         voxels[i].color[1] = 1;
         voxels[i].color[2] = 1;
@@ -87,7 +86,7 @@ int main(int argc, char** argv) {
     cbuffer->unmap();
     spdlog::info("Random gen end");
 
-    MeshGenPipeline* mg = new MeshGenPipeline();
+    particleInfoSync.wait();
     mg->generate(16*64, 16*64, 1, cbuffer->getHandle(), meshBuffer->getHandle());
 
     Simulator* sim = new Simulator();

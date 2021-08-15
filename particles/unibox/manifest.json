@@ -1,0 +1,13 @@
+{
+    "displayName": "UniBox",
+    "description": "UniBox basic particle pack.",
+
+    "namespace": "unibox",
+
+    "particles": [
+        {
+            "name": "sand",
+            "location": "sand"
+        }
+    ]
+}

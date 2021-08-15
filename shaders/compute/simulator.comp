@@ -6,6 +6,7 @@ struct ArrayVertex {
     uint id;
     uint state;
     float paintColor[4];
+    uint data[4];
 };
 
 layout (set = 0, binding = 0) buffer SimulatedArray {
@@ -26,6 +27,8 @@ uint calculatePosition(ivec3 pos) {
     return calculatePosition(pos.x, pos.y, pos.z);
 }
 
+#pragma PARTICLE_CODE
+
 void updateParticle(uint globalOffset) {
     // Calculate the position in xyz format
     uint x = globalOffset%simulationInfo.xSize;
@@ -34,19 +37,21 @@ void updateParticle(uint globalOffset) {
 
     ArrayVertex v = simulationArray.data[globalOffset];
     // If particle is air or it has already been updated then don't update it again.
-    if(v.id == 0 || (v.state & 0x00000001) != 0) return;
+    if((v.id&0xFFFF) == 0 || (v.state & 0x00000001) != 0) return;
 
     // For now we just move the particle down if possible.
     if(y == 0) return; // Cannot move any lower
     uint neighbourId = calculatePosition(x, y-1, z);
     ArrayVertex lowerNeighbour = simulationArray.data[neighbourId];
-    if(lowerNeighbour.id == 0) {
+    if((lowerNeighbour.id&0xFFFF) == 0) {
         // Empty position found below.
         v.state |= 0x01;
         simulationArray.data[neighbourId] = v;
         simulationArray.data[globalOffset].id = 0;
         simulationArray.data[globalOffset].state = 0;
     }
+
+    #pragma PARTICLE_SWITCH
 }
 
 void main() {
@@ -54,11 +59,4 @@ void main() {
     if(globalId > calculatePosition(simulationInfo.xSize, simulationInfo.ySize, simulationInfo.zSize)) return;
 
     updateParticle(globalId);
-}
-
-void resetParticles() {
-    uint globalId = gl_GlobalInvocationID.x;
-    if(globalId > calculatePosition(simulationInfo.xSize, simulationInfo.ySize, simulationInfo.zSize)) return;
-
-    simulationArray.data[globalId].state &= 0xFFFFFFFE;
 }

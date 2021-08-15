@@ -21,5 +21,7 @@ namespace unibox {
 
         void generate(uint32_t sizeX, uint32_t sizeY, uint32_t sizeZ, VkBuffer inputBuffer, VkBuffer meshBuffer);
         bool isExecuting();
+
+        void createMeshGenerationInformation();
     };
 }

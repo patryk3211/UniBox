@@ -10,6 +10,7 @@ struct InputVertex {
     float g;
     float b;
     float a;
+    uint data[4];
 };
 
 struct OutputVertex {
@@ -50,7 +51,7 @@ void main() {
 
     float w = -1.0;
     InputVertex inVert = inputData.data[gl_GlobalInvocationID.x];
-    if(inVert.id > 0) {
+    if((inVert.id&0xFFFF) > 0) {
         w = 1.0;
         for(int i = 0; i < 6; i++) 
             mesh.data[outputPos+i].color = vec4(blend(

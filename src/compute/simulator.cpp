@@ -1,6 +1,7 @@
 #include <compute/simulator.hpp>
 
 #include <vk-engine/engine.hpp>
+#include <simulator/voxel.hpp>
 
 #include <spdlog/spdlog.h>
 
@@ -10,7 +11,7 @@ using namespace unibox;
 
 #define UBO_SIZE sizeof(uint)*3
 
-#define VERTEX_SIZE sizeof(uint)*4+sizeof(float)*4
+#define VERTEX_SIZE sizeof(Voxel)
 
 Simulator::Simulator()
     : simulatePipeline(),
