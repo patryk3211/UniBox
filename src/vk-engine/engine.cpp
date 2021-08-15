@@ -41,10 +41,10 @@ Engine::~Engine() {
 
     vkDestroyRenderPass(device, renderpass, 0);
 
-    for(auto buf : gfx_buffers) delete buf;
-    for(auto pool : gfx_cmd_pools) delete pool;
-    for(auto buf : comp_buffers) delete buf;
-    for(auto pool : comp_cmd_pools) delete pool;
+    for(auto pool : cmd_buffers) {
+        for(auto buffer : pool.second) delete buffer;
+        delete pool.first;
+    }
 
     destroy_vma();
 
@@ -150,9 +150,11 @@ bool Engine::init(GLFWwindow* window) {
 }
 
 bool Engine::init_commands() {
-    gfx_cmd_pools.push_back(new CommandPool(device, gfx_queue_index));
-    gfx_buffers.push_back(new CommandBuffer(device, (*gfx_cmd_pools.begin())->getHandle()));
-    comp_cmd_pools.push_back(new CommandPool(device, compute_queue_index));
+    default_gfx_pool = new CommandPool(device, gfx_queue_index);
+    default_comp_pool = new CommandPool(device, gfx_queue_index);
+    cmd_buffers.insert({ default_gfx_pool, std::list<CommandBuffer*>() });
+    cmd_buffers.insert({ default_comp_pool, std::list<CommandBuffer*>() });
+    default_gfx_buffer = allocateBuffer(QueueType::GRAPHICS);
     return true;
 }
 
@@ -274,9 +276,8 @@ void Engine::draw() {
 
     uint32_t imgIdx;
     if(vkAcquireNextImageKHR(device, vkb_swapchain.swapchain, 0xFFFFFFFF, presentSemaphore, 0, &imgIdx) != VK_SUCCESS) return;
-    CommandBuffer* gfx_cmd_buf = *gfx_buffers.begin();
-    if(!gfx_cmd_buf->resetBuffer()) return;
-    if(!gfx_cmd_buf->startRecording()) return;
+    if(!default_gfx_buffer->resetBuffer()) return;
+    if(!default_gfx_buffer->startRecording()) return;
 
     VkClearValue clearValue = { { 0.0f, 0.0f, 1.0f, 1.0f } };
     VkRenderPassBeginInfo rpbi = {
@@ -297,15 +298,15 @@ void Engine::draw() {
         .pClearValues = &clearValue
     };
 
-    vkCmdBeginRenderPass(gfx_cmd_buf->getHandle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(default_gfx_buffer->getHandle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
 
-    for(int i = 0; i < renderCalls.size(); i++) renderCalls.data()[i](gfx_cmd_buf->getHandle());
+    for(int i = 0; i < renderCalls.size(); i++) renderCalls.data()[i](default_gfx_buffer->getHandle());
 
-    vkCmdEndRenderPass(gfx_cmd_buf->getHandle());
+    vkCmdEndRenderPass(default_gfx_buffer->getHandle());
 
-    gfx_cmd_buf->stopRecording();
+    default_gfx_buffer->stopRecording();
 
-    gfx_cmd_buf->submit(gfx_queue, { presentSemaphore }, { renderSemaphore }, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, renderFence);
+    default_gfx_buffer->submit(gfx_queue, { presentSemaphore }, { renderSemaphore }, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, renderFence);
 
     VkPresentInfoKHR presentInfo = {
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -375,68 +376,48 @@ size_t Engine::padUbo(size_t bufferSize) {
     return aligned;
 }
 
-CommandBuffer* Engine::allocateBuffer(QueueType type, bool fromNewPool) {
-    CommandBuffer* buffer;
+CommandBuffer* Engine::allocateBuffer(QueueType type) {
     switch(type) {
-        case GRAPHICS:
-            if(!fromNewPool) buffer = new CommandBuffer(device, (*gfx_cmd_pools.begin())->getHandle());
-            else {
-                CommandPool* pool = new CommandPool(device, gfx_queue_index);
-                buffer = new CommandBuffer(device, pool->getHandle());
-                gfx_cmd_pools.push_back(pool);
-            }
-            gfx_buffers.push_back(buffer);
-            break;
-        case COMPUTE:
-            if(!fromNewPool) buffer = new CommandBuffer(device, (*comp_cmd_pools.begin())->getHandle());
-            else {
-                CommandPool* pool = new CommandPool(device, compute_queue_index);
-                buffer = new CommandBuffer(device, pool->getHandle());
-                comp_cmd_pools.push_back(pool);
-            }
-            comp_buffers.push_back(buffer);
-            break;
-        default:
-            buffer = 0;
-            break;
+        case GRAPHICS: return allocateBuffer(default_gfx_pool);
+        case COMPUTE: return allocateBuffer(default_comp_pool);
+        default: return 0;
     }
+}
+
+CommandBuffer* Engine::allocateBuffer(CommandPool* pool) {
+    CommandBuffer* buffer = new CommandBuffer(device, pool->getHandle());
+    cmd_buffers[pool].push_back(buffer);
+    cmd_buffer_pools.insert({ buffer, pool });
     return buffer;
 }
 
-void Engine::freeBuffer(CommandBuffer* buffer) {
-    VkCommandPool pool = buffer->getPool();
-    if(pool == (*gfx_cmd_pools.begin())->getHandle()) gfx_buffers.remove(buffer);
-    else if(pool == (*comp_cmd_pools.begin())->getHandle()) comp_buffers.remove(buffer);
-    else {
-        // Check in Graphic Pools
-        CommandPool* deletePool = 0;
-        for(auto _pool : gfx_cmd_pools) {
-            if(_pool->getHandle() != pool) continue;
-            gfx_cmd_pools.remove(_pool);
-            gfx_buffers.remove(buffer);
-            deletePool = _pool;
-            break;
-        }
-        if(deletePool != 0) {
-            delete buffer;
-            delete deletePool;
-            return;
-        }
-        // Check in Compute Pools
-        for(auto _pool : comp_cmd_pools) {
-            if(_pool->getHandle() != pool) continue;
-            comp_cmd_pools.remove(_pool);
-            comp_buffers.remove(buffer);
-            deletePool = _pool;
-            break;
-        }
-        if(deletePool != 0) {
-            delete buffer;
-            delete deletePool;
-            return;
-        }
+CommandPool* Engine::allocatePool(QueueType type) {
+    CommandPool* pool;
+    switch(type) {
+        case GRAPHICS: pool = new CommandPool(device, gfx_queue_index); break;
+        case COMPUTE: pool = new CommandPool(device, compute_queue_index); break;
+        default: return 0;
     }
+    cmd_buffers.insert({ pool, std::list<CommandBuffer*>() });
+    return pool;
+}
+
+void Engine::freeBuffer(CommandBuffer* buffer) {
+    CommandPool* pool = cmd_buffer_pools[buffer];
+    cmd_buffers[pool].remove(buffer);
+
+    bool queueDelete = false;
+    if(cmd_buffers[pool].size() == 0) queueDelete = true;
+
+    cmd_buffer_pools.erase(buffer);
     delete buffer;
+
+    if(queueDelete) {
+        if(pool == default_gfx_pool || pool == default_comp_pool) return;
+
+        cmd_buffers.erase(pool);
+        delete pool;
+    }
 }
 
 VkQueue Engine::getQueue(QueueType type) {

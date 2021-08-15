@@ -43,7 +43,8 @@ Simulator::Simulator()
         return;
     }
 
-    cmd = Engine::getInstance()->allocateBuffer(QueueType::COMPUTE, true);
+    CommandPool* pool = Engine::getInstance()->allocatePool(QueueType::COMPUTE);
+    cmd = Engine::getInstance()->allocateBuffer(pool);
 
     VkFenceCreateInfo info = {
         .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,

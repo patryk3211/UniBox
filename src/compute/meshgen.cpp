@@ -21,7 +21,7 @@ using namespace unibox;
 MeshGenPipeline::MeshGenPipeline() {
     this->device = Engine::getInstance()->getDevice();
 
-    this->buffer = Engine::getInstance()->allocateBuffer(QueueType::COMPUTE, true);
+    this->buffer = Engine::getInstance()->allocateBuffer(Engine::getInstance()->allocatePool(QueueType::COMPUTE));
 
     Shader shader = Shader(VK_SHADER_STAGE_COMPUTE_BIT, "main");
     shader.addCode("shaders/compute/meshGen.spv");

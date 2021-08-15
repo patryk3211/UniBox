@@ -8,6 +8,7 @@
 #include <vector>
 #include <list>
 #include <thread>
+#include <unordered_map>
 
 #include <vk-engine/commandpool.hpp>
 #include <vk-engine/commandbuffer.hpp>
@@ -45,11 +46,18 @@ namespace unibox {
         vkb::Swapchain vkb_swapchain;
         std::vector<VkImageView> imageViews;
 
-        std::list<CommandPool*> gfx_cmd_pools;
+        /*std::list<CommandPool*> gfx_cmd_pools;
         std::list<CommandBuffer*> gfx_buffers;
 
         std::list<CommandPool*> comp_cmd_pools;
-        std::list<CommandBuffer*> comp_buffers;
+        std::list<CommandBuffer*> comp_buffers;*/
+
+        CommandPool* default_gfx_pool;
+        CommandPool* default_comp_pool;
+        CommandBuffer* default_gfx_buffer;
+
+        std::unordered_map<CommandPool*, std::list<CommandBuffer*>> cmd_buffers;
+        std::unordered_map<CommandBuffer*, CommandPool*> cmd_buffer_pools;
 
         VkRenderPass renderpass;
         std::vector<VkFramebuffer> framebuffers;
@@ -89,8 +97,13 @@ namespace unibox {
 
         void addRenderFunction(void (*renderFunc)(VkCommandBuffer));
 
-        CommandBuffer* allocateBuffer(QueueType type, bool fromNewPool);
+        CommandBuffer* allocateBuffer(QueueType type);
+        CommandBuffer* allocateBuffer(CommandPool* pool);
+        CommandPool* allocatePool(QueueType type);
+
         void freeBuffer(CommandBuffer* buffer);
+        void freePool(CommandPool* pool);
+
         VkQueue getQueue(QueueType type);
 
         static Engine* getInstance() { return instance; }
