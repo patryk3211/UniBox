@@ -18,10 +18,6 @@
 
 using namespace unibox;
 
-ComputePipeline* compute_pipeline;
-Buffer* cbuffer;
-bool done = false;
-
 int main(int argc, char** argv) {
     spdlog::info("Welcome to UniBox!");
 
@@ -37,6 +33,8 @@ int main(int argc, char** argv) {
     camera->setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
     camera->orthographic(1024.0f/720.0f, -10.0f, 10.0f, zoom);
     //camera->perspective(90.0f, 1024.0f/720.0f);
+    zoom = 50.0f;
+    camera->setPosition(glm::vec3(60, 45, 0));
 
     GraphicsPipeline* default_pipeline;
     {
@@ -69,45 +67,55 @@ int main(int argc, char** argv) {
     particleLoadSync.wait();
     auto particleInfoSync = std::async(std::launch::async, [mg](){ mg->createMeshGenerationInformation(); });
 
-    cbuffer = new Buffer(sizeof(Voxel)*256*64*64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    Simulator* sim = new Simulator();
+    auto simInfoSync = std::async(std::launch::async, [sim](){ sim->createSimulationInformation(); });
+
+    Buffer* gridBuffer = new Buffer(sizeof(GridPoint)*256*64*64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    Buffer* particleBuffer;
+    
     Buffer* meshBuffer = new Buffer((sizeof(float)*4*2)*256*6*64*64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_GPU_ONLY);
 
     spdlog::info("Random gen start");
-    void* buf = cbuffer->map();
-    Voxel* voxels = (Voxel*)buf;
-    for(int i = 0; i < 256*64*64; i++) {
-        voxels[i].type = std::rand()%10 == 0 ? 1 : 0;
-        //voxels[i].paintColor = glm::vec4(1.0, 1.0, 0.0, 0.5);
-        /*voxels[i].color[0] = 1;
-        voxels[i].color[1] = 1;
-        voxels[i].color[2] = 1;
-        voxels[i].color[3] = 1;*/
+    uint particleCount = 0;
+    {
+        std::vector<Voxel> particles;
+
+        for(int i = 0; i < 1000; i++) {
+            Voxel voxel = {};
+            voxel.type = 1;
+            voxel.position[0] = std::rand()%128;
+            voxel.position[1] = std::rand()%128;
+            particles.push_back(voxel);
+        }
+
+        particleCount = particles.size();
+        particleBuffer = new Buffer(sizeof(Voxel)*particleCount, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_CPU_TO_GPU);
+        particleBuffer->store(particles.data(), 0, sizeof(Voxel)*particleCount);
     }
-    cbuffer->unmap();
     spdlog::info("Random gen end");
 
+    uint size = 16*64;
+
     particleInfoSync.wait();
-    mg->generate(16*64, 16*64, 1, cbuffer->getHandle(), meshBuffer->getHandle());
 
-    Simulator* sim = new Simulator();
-    //sim->simulate(16*64, 16*64, 1, cbuffer->getHandle());
-
-    BufferRenderer render = BufferRenderer("default", 256*6*64*64, meshBuffer);
-
+    mg->generate(particleCount, particleBuffer->getHandle(), meshBuffer->getHandle());
+    BufferRenderer render = BufferRenderer("default", particleCount*6, meshBuffer);
     window.getEngine().addRenderFunction(Renderer::renderAll);
 
     //auto last = std::chrono::high_resolution_clock::now();
 
-    int f = 0;
+    int f = 1;
 
+    simInfoSync.wait();
     while(!window.shouldClose()) {
         window.frameStart();
         /*auto now = std::chrono::high_resolution_clock::now();
         auto dur = std::chrono::duration_cast<std::chrono::microseconds>(now-last);
         last=now;
         spdlog::info(dur.count());*/
-        mg->generate(16*64, 16*64, 1, cbuffer->getHandle(), meshBuffer->getHandle());
-        /*if(f == 0)*/ sim->simulate(16*64, 16*64, 1, cbuffer->getHandle());
+
+        sim->simulate(size, size, 1, particleCount, gridBuffer->getHandle(), particleBuffer->getHandle());
+        mg->generate(particleCount, particleBuffer->getHandle(), meshBuffer->getHandle());
 
         zoom += dir;
         if(zoom < 10.0f) dir = -dir;
@@ -118,17 +126,17 @@ int main(int argc, char** argv) {
 
         window.render();
         f++;
-        f = f%30;
+        f = f%120;
     }
 
     window.waitIdle();
 
-    delete cbuffer;
+    delete gridBuffer;
+    delete particleBuffer;
     delete meshBuffer;
     delete mg;
     delete sim;
     delete default_pipeline;
-    delete compute_pipeline;
     delete camera;
 
     return 0;

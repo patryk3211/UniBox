@@ -279,7 +279,7 @@ void Engine::draw() {
     if(!default_gfx_buffer->resetBuffer()) return;
     if(!default_gfx_buffer->startRecording()) return;
 
-    VkClearValue clearValue = { { 0.0f, 0.0f, 1.0f, 1.0f } };
+    VkClearValue clearValue = { { 0.0f, 0.0f, 0.0f, 1.0f } };
     VkRenderPassBeginInfo rpbi = {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
         .renderPass = renderpass,

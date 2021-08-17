@@ -1,0 +1,41 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+struct ArrayVertex {
+    uint id;
+    float paintColor[4];
+    uint data[4];
+    float temperature;
+    float velocity[3];
+    float position[3];
+};
+
+struct GridPoint {
+    uint particleOffset;
+};
+
+layout (set = 0, binding = 0) buffer ParticleGrid {
+    GridPoint[] data;
+} grid;
+
+layout (set = 0, binding = 1) readonly buffer Particles {
+    ArrayVertex[] data;
+} particles;
+
+layout ( push_constant ) uniform GridInfo {
+    uint sizeX;
+    uint sizeY;
+    uint sizeZ;
+    uint particleCount;
+} gridInfo;
+
+void main() {
+    if(gl_GlobalInvocationID.x >= gridInfo.particleCount) return;
+    
+    ArrayVertex vertex = particles.data[gl_GlobalInvocationID.x];
+    if(vertex.id == 0) return;
+
+    uint vertexGridOffset = uint(vertex.position[0])+uint(vertex.position[1])*gridInfo.sizeX+uint(vertex.position[2])*gridInfo.sizeX*gridInfo.sizeY;
+    grid.data[vertexGridOffset].particleOffset = gl_GlobalInvocationID.x+1;
+}

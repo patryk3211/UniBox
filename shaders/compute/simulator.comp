@@ -4,20 +4,44 @@ layout (local_size_x = 256) in;
 
 struct ArrayVertex {
     uint id;
-    uint state;
     float paintColor[4];
     uint data[4];
+    float temperature;
+    float velocity[3];
+    float position[3];
 };
 
-layout (set = 0, binding = 0) buffer SimulatedArray {
-    ArrayVertex[] data;
-} simulationArray;
+struct GridPoint {
+    uint particleOffset;
+};
 
-layout (set = 0, binding = 1) uniform SimulationInfo {
+layout (set = 0, binding = 0) readonly buffer ParticleGrid {
+    GridPoint[] data;
+} grid;
+
+layout (set = 0, binding = 1) buffer Particles {
+    ArrayVertex[] data;
+} particles;
+
+layout ( push_constant ) uniform SimulationInfo {
     uint xSize;
     uint ySize;
     uint zSize;
+    uint particleCount;
+    uint updatesPerSecond;
 } simulationInfo;
+
+struct ParticleInfoPacket {
+    float density;
+    uint state; /**
+                 * bits 0-1 = State Bits (00b - Solid, 01b - Liquid, 10b - Gas, 11b - Powder)
+                 * bit 2 = Affected By Gravity (0b - false, 1b - true)
+                 **/
+};
+
+layout (set = 0, binding = 2) readonly buffer ParticleInfo {
+    ParticleInfoPacket[] data;
+} particleInfo;
 
 uint calculatePosition(uint x, uint y, uint z) {
     return x + y*simulationInfo.xSize + z*simulationInfo.xSize*simulationInfo.ySize;
@@ -27,28 +51,73 @@ uint calculatePosition(ivec3 pos) {
     return calculatePosition(pos.x, pos.y, pos.z);
 }
 
+bool checkBounds(uint x, uint y, uint z) {
+    return x >= 0 && x < simulationInfo.xSize && y >= 0 && y < simulationInfo.ySize && z >= 0 && z < simulationInfo.zSize;
+}
+
+uint getOffset(uint x, uint y, uint z) {
+    return grid.data[calculatePosition(x, y, z)].particleOffset;
+}
+
+vec3 move(float x, float y, float z, float dX, float dY, float dZ) {
+    const uint thisIdx = grid.data[calculatePosition(uint(x), uint(y), uint(z))].particleOffset;
+    const ArrayVertex thisVert = particles.data[thisIdx];
+
+    const float divider = max(abs(dX), max(abs(dY), abs(dZ)));
+    if(divider == 0) return vec3(x, y, z);
+    const uint destX = int(x+dX);
+    const uint destY = int(y+dY);
+    const uint destZ = int(z+dZ);
+    
+    const float stepX = dX/divider;
+    const float stepY = dY/divider;
+    const float stepZ = dZ/divider;
+
+    float posX = x;
+    float posY = y;
+    float posZ = z;
+
+    while(int(posX) != destX && int(posY) != destY && int(posZ) != destZ) {
+        const float newX = posX+stepX;
+        const float newY = posY+stepY;
+        const float newZ = posZ+stepZ;
+        
+        if(!checkBounds(uint(newX), uint(newY), uint(newZ))) break;
+        const uint neighbour = grid.data[calculatePosition(uint(newX), uint(newY), uint(newZ))].particleOffset;
+        
+        ArrayVertex neighbourVert = particles.data[neighbour];
+        if(particleInfo.data[thisVert.id&0xFFFF].density <= particleInfo.data[neighbourVert.id&0xFFFF].density) {
+            
+        } else {
+            // This density is greater than the collider density, the particle should switch position with the collider.
+            
+        }
+    }
+
+    return vec3(posX, posY, posZ);
+}
+
 #pragma PARTICLE_CODE
 
 void updateParticle(uint globalOffset) {
-    // Calculate the position in xyz format
-    uint x = globalOffset%simulationInfo.xSize;
-    uint y = globalOffset/simulationInfo.xSize%simulationInfo.ySize;
-    uint z = globalOffset/simulationInfo.xSize/simulationInfo.ySize%simulationInfo.zSize;
+    // Calculate all neighbour IDs
+    /*uint left = globalOffset-1;
+    uint right = globalOffset+1;
+    uint up = globalOffset+simulationInfo.xSize;
+    uint down = globalOffset-simulationInfo.xSize;
+    uint front = globalOffset-simulationInfo.xSize*simulationInfo.ySize;
+    uint back = globalOffset+simulationInfo.xSize*simulationInfo.ySize;*/
 
-    ArrayVertex v = simulationArray.data[globalOffset];
-    // If particle is air or it has already been updated then don't update it again.
-    if((v.id&0xFFFF) == 0 || (v.state & 0x00000001) != 0) return;
+    ArrayVertex v = particles.data[globalOffset];
 
     // For now we just move the particle down if possible.
-    if(y == 0) return; // Cannot move any lower
-    uint neighbourId = calculatePosition(x, y-1, z);
-    ArrayVertex lowerNeighbour = simulationArray.data[neighbourId];
-    if((lowerNeighbour.id&0xFFFF) == 0) {
+    if((v.id&0xFFFF) == 0) return;
+    if(v.position[1] == 0) return; // Cannot move any lower
+
+    uint offset = getOffset(uint(v.position[0]), uint(v.position[1])-1, uint(v.position[2]));
+    if(offset == 0) {
         // Empty position found below.
-        v.state |= 0x01;
-        simulationArray.data[neighbourId] = v;
-        simulationArray.data[globalOffset].id = 0;
-        simulationArray.data[globalOffset].state = 0;
+        particles.data[globalOffset].position[1] -= 1;
     }
 
     #pragma PARTICLE_SWITCH
@@ -56,7 +125,7 @@ void updateParticle(uint globalOffset) {
 
 void main() {
     uint globalId = gl_GlobalInvocationID.x;
-    if(globalId > calculatePosition(simulationInfo.xSize, simulationInfo.ySize, simulationInfo.zSize)) return;
+    if(globalId > simulationInfo.particleCount) return;
 
     updateParticle(globalId);
 }

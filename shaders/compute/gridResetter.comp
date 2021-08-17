@@ -1,0 +1,22 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+struct GridPoint {
+    uint particleOffset;
+};
+
+layout (set = 0, binding = 0) buffer ParticleGrid {
+    GridPoint[] data;
+} grid;
+
+layout ( push_constant ) uniform GridInfo {
+    uint sizeX;
+    uint sizeY;
+    uint sizeZ;
+} gridInfo;
+
+void main() {
+    if(gl_GlobalInvocationID.x >= gridInfo.sizeX*gridInfo.sizeY*gridInfo.sizeZ) return;
+    grid.data[gl_GlobalInvocationID.x].particleOffset = 0;
+}

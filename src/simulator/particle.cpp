@@ -115,6 +115,12 @@ Particle::Particle(const std::string& particleDir) {
                 }
             } else spdlog::warn("Phases property in '" + displayName + "' (directory '" + particleDir + "') is not an array.");
         }
+
+        auto densityJson = propJson.find("density");
+        if(densityJson != propJson.end()) {
+            if(densityJson->is_number()) properties.density = densityJson->get<float>();
+            else spdlog::warn("Density of an element must be a number.");
+        } else properties.density = 1;
     }
 
     {
@@ -268,4 +274,9 @@ void Particle::loadParticlePack(const std::string& packRoot) {
 
 void Particle::fillPip(ParticleInfoPacket& pip) {
     pip.color = properties.color;
+}
+
+void Particle::fillSimPip(SimulationParticleInfoPacket& simPip) {
+    simPip.density = properties.density;
+    simPip.state = properties.state | (properties.affectedByGravity << 2);
 }

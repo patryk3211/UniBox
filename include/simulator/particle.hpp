@@ -29,10 +29,10 @@ namespace unibox {
     };
 
     enum ParticleState {
-        SOLID,
-        LIQUID,
-        GAS,
-        POWDER
+        SOLID = 0b00,
+        LIQUID = 0b01,
+        GAS = 0b10,
+        POWDER = 0b11
     };
 
     NLOHMANN_JSON_SERIALIZE_ENUM(ParticleState, {
@@ -46,10 +46,16 @@ namespace unibox {
         ParticleState state;
         glm::vec4 color;
         std::vector<ParticlePhaseChangeProperty> phases;
+        float density;
     };
 
     struct ParticleInfoPacket {
         glm::vec4 color;
+    };
+
+    struct SimulationParticleInfoPacket {
+        float density;
+        uint state;
     };
 
     class Particle {
@@ -76,6 +82,7 @@ namespace unibox {
 
         void initializeVoxel(Voxel& voxel);
         void fillPip(ParticleInfoPacket& pip);
+        void fillSimPip(SimulationParticleInfoPacket& simPip);
 
         bool isValid();
 

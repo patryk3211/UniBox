@@ -9,18 +9,32 @@ namespace unibox {
         VkDevice device;
 
         ComputePipeline simulatePipeline;
+        ComputePipeline buildPipeline;
         ComputePipeline resetPipeline;
 
-        CommandBuffer* cmd;
+        CommandBuffer* simCmd;
+        CommandBuffer* buildCmd;
+        CommandBuffer* resetCmd;
 
-        Buffer ubo;
+        Buffer* pib;
 
-        VkFence fence;
+        VkFence simFence;
+        VkFence resetFence;
+        VkFence buildFence;
+
+        VkSemaphore resetSemaphore;
+        VkSemaphore buildSemaphore;
+
+        bool recordSimBuffer(uint32_t sizeX, uint32_t sizeY, uint32_t sizeZ, uint32_t particleCount, VkBuffer gridBuffer, VkBuffer particleBuffer);
+        bool recordBuildBuffer(uint32_t sizeX, uint32_t sizeY, uint32_t sizeZ, uint32_t particleCount, VkBuffer gridBuffer, VkBuffer particleBuffer);
+        bool recordResetBuffer(uint32_t sizeX, uint32_t sizeY, uint32_t sizeZ, VkBuffer gridBuffer);
     public:
         Simulator();
         ~Simulator();
 
-        void simulate(uint32_t sizeX, uint32_t sizeY, uint32_t sizeZ, VkBuffer particleBuffer);
+        void simulate(uint32_t sizeX, uint32_t sizeY, uint32_t sizeZ, uint32_t particleCount, VkBuffer gridBuffer, VkBuffer particleBuffer);
         bool isExecuting();
+
+        void createSimulationInformation();
     };
 }

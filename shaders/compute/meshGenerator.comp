@@ -5,12 +5,14 @@ layout (local_size_x = 256) in;
 
 struct InputVertex {
     uint id;
-    uint state;
     float r;
     float g;
     float b;
     float a;
     uint data[4];
+    float temperature;
+    float velocity[3];
+    float position[3];
 };
 
 struct OutputVertex {
@@ -22,20 +24,19 @@ struct ParticleInfo {
     vec4 materialColor;
 };
 
-
-layout (set = 0, binding = 0) readonly buffer InputData {
+layout (set = 0, binding = 0) readonly buffer ParticleData {
     InputVertex[] data;
-} inputData;
+} particles;
 
-layout (set = 0, binding = 1) uniform InputDataInfo {
-    ivec3 dimensions;
+layout ( push_constant ) uniform InputDataInfo {
+    uint particleCount;
 } inputInfo;
 
-layout (set = 0, binding = 2) buffer OutputMesh {
+layout (set = 0, binding = 1) buffer OutputMesh {
     OutputVertex[] data;
 } mesh;
 
-layout (set = 0, binding = 3) readonly buffer ParticleDataBuffer {
+layout (set = 0, binding = 2) readonly buffer ParticleDataBuffer {
     ParticleInfo[] data;
 } particleData;
 
@@ -45,12 +46,10 @@ vec3 blend(vec3 a, vec3 b, float blendAmount) {
 
 void main() {
     uint outputPos = gl_GlobalInvocationID.x*6;
-    uint xPos = gl_GlobalInvocationID.x%inputInfo.dimensions.x;
-    uint yPos = gl_GlobalInvocationID.x/inputInfo.dimensions.x%inputInfo.dimensions.y;
-    uint zPos = gl_GlobalInvocationID.x/inputInfo.dimensions.x/inputInfo.dimensions.y%inputInfo.dimensions.z;
+    if(gl_GlobalInvocationID.x >= inputInfo.particleCount) return;
 
     float w = -1.0;
-    InputVertex inVert = inputData.data[gl_GlobalInvocationID.x];
+    InputVertex inVert = particles.data[gl_GlobalInvocationID.x];
     if((inVert.id&0xFFFF) > 0) {
         w = 1.0;
         for(int i = 0; i < 6; i++) 
@@ -58,13 +57,13 @@ void main() {
                     particleData.data[inVert.id-1].materialColor.xyz,
                     vec3(inVert.r, inVert.g, inVert.b),
                     inVert.a),
-                particleData.data[inVert.id-1].materialColor.w);//vec4(particleData.data[inVert.id-1].materialColor.xyz*(1.0-inVert.paintColor.w) + inVert.paintColor.xyz*inVert.paintColor.w, particleData.data[inVert.id-1].materialColor.w);
+                particleData.data[inVert.id-1].materialColor.w);
     }
 
-    mesh.data[outputPos+0].vertex = vec4(vec3(-0.5, -0.5, 0.0)+vec3(xPos, yPos, 0), w);
-    mesh.data[outputPos+1].vertex = vec4(vec3(-0.5,  0.5, 0.0)+vec3(xPos, yPos, 0), w);
-    mesh.data[outputPos+2].vertex = vec4(vec3( 0.5, -0.5, 0.0)+vec3(xPos, yPos, 0), w);
-    mesh.data[outputPos+3].vertex = vec4(vec3( 0.5, -0.5, 0.0)+vec3(xPos, yPos, 0), w);
-    mesh.data[outputPos+4].vertex = vec4(vec3(-0.5,  0.5, 0.0)+vec3(xPos, yPos, 0), w);
-    mesh.data[outputPos+5].vertex = vec4(vec3( 0.5,  0.5, 0.0)+vec3(xPos, yPos, 0), w);
+    mesh.data[outputPos+0].vertex = vec4(vec3(-0.5, -0.5, 0.0)+vec3(uint(inVert.position[0]), uint(inVert.position[1]), 0), w);
+    mesh.data[outputPos+1].vertex = vec4(vec3(-0.5,  0.5, 0.0)+vec3(uint(inVert.position[0]), uint(inVert.position[1]), 0), w);
+    mesh.data[outputPos+2].vertex = vec4(vec3( 0.5, -0.5, 0.0)+vec3(uint(inVert.position[0]), uint(inVert.position[1]), 0), w);
+    mesh.data[outputPos+3].vertex = vec4(vec3( 0.5, -0.5, 0.0)+vec3(uint(inVert.position[0]), uint(inVert.position[1]), 0), w);
+    mesh.data[outputPos+4].vertex = vec4(vec3(-0.5,  0.5, 0.0)+vec3(uint(inVert.position[0]), uint(inVert.position[1]), 0), w);
+    mesh.data[outputPos+5].vertex = vec4(vec3( 0.5,  0.5, 0.0)+vec3(uint(inVert.position[0]), uint(inVert.position[1]), 0), w);
 }

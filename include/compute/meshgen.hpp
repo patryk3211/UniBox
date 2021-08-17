@@ -11,7 +11,6 @@ namespace unibox {
         ComputePipeline* pipeline;
         CommandBuffer* buffer;
 
-        Buffer* ubo;
         Buffer* pib; // Particle Info Buffer
 
         VkFence fence;
@@ -19,7 +18,7 @@ namespace unibox {
         MeshGenPipeline();
         ~MeshGenPipeline();
 
-        void generate(uint32_t sizeX, uint32_t sizeY, uint32_t sizeZ, VkBuffer inputBuffer, VkBuffer meshBuffer);
+        void generate(uint32_t particleCount, VkBuffer particleBuffer, VkBuffer meshBuffer);
         bool isExecuting();
 
         void createMeshGenerationInformation();

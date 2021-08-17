@@ -5,6 +5,8 @@
     "state": "powder",
     "gravity": true,
 
+    "density": 1.442,
+
     "phases": [
         {
             "temperature": 1713,
