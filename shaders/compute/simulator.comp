@@ -59,42 +59,79 @@ uint getOffset(uint x, uint y, uint z) {
     return grid.data[calculatePosition(x, y, z)].particleOffset;
 }
 
-vec3 move(float x, float y, float z, float dX, float dY, float dZ) {
-    const uint thisIdx = grid.data[calculatePosition(uint(x), uint(y), uint(z))].particleOffset;
-    const ArrayVertex thisVert = particles.data[thisIdx];
+void moveVelocity(const uint updatedIndex) {
+    ArrayVertex thisVert = particles.data[updatedIndex];
 
-    const float divider = max(abs(dX), max(abs(dY), abs(dZ)));
-    if(divider == 0) return vec3(x, y, z);
-    const uint destX = int(x+dX);
-    const uint destY = int(y+dY);
-    const uint destZ = int(z+dZ);
+    const float divider = max(abs(thisVert.velocity[0]), max(abs(thisVert.velocity[1]), abs(thisVert.velocity[2])));
+    if(divider == 0) return;
+    const uint destX = uint(thisVert.position[0]+thisVert.velocity[0]);
+    const uint destY = uint(thisVert.position[1]+thisVert.velocity[1]);
+    const uint destZ = uint(thisVert.position[2]+thisVert.velocity[2]);
     
-    const float stepX = dX/divider;
-    const float stepY = dY/divider;
-    const float stepZ = dZ/divider;
+    const float stepX = thisVert.velocity[0]/divider;
+    const float stepY = thisVert.velocity[1]/divider;
+    const float stepZ = thisVert.velocity[2]/divider;
 
-    float posX = x;
-    float posY = y;
-    float posZ = z;
-
-    while(int(posX) != destX && int(posY) != destY && int(posZ) != destZ) {
-        const float newX = posX+stepX;
-        const float newY = posY+stepY;
-        const float newZ = posZ+stepZ;
+    do {
+        const float newX = thisVert.position[0]+stepX;
+        const float newY = thisVert.position[1]+stepY;
+        const float newZ = thisVert.position[2]+stepZ;
         
-        if(!checkBounds(uint(newX), uint(newY), uint(newZ))) break;
-        const uint neighbour = grid.data[calculatePosition(uint(newX), uint(newY), uint(newZ))].particleOffset;
-        
-        ArrayVertex neighbourVert = particles.data[neighbour];
-        if(particleInfo.data[thisVert.id&0xFFFF].density <= particleInfo.data[neighbourVert.id&0xFFFF].density) {
-            
-        } else {
-            // This density is greater than the collider density, the particle should switch position with the collider.
-            
+        bool stop = false;
+        if(!checkBounds(uint(newX), uint(thisVert.position[1]), uint(thisVert.position[2]))) {
+            // X Out of bounds, stop
+            thisVert.velocity[0] = 0;
+            stop = true;
         }
-    }
+        if(!checkBounds(uint(thisVert.position[0]), uint(newY), uint(thisVert.position[2]))) {
+            // Y Out of bounds, stop
+            thisVert.velocity[1] = 0;
+            stop = true;
+        }
+        if(!checkBounds(uint(thisVert.position[0]), uint(thisVert.position[1]), uint(newZ))) {
+            // Z Out of bounds, stop
+            thisVert.velocity[2] = 0;
+            stop = true;
+        }
+        if(stop) break;
+        const uint neighbour = grid.data[calculatePosition(uint(newX), uint(newY), uint(newZ))].particleOffset;
+        if(neighbour > 0) {
+            ArrayVertex neighbourVert = particles.data[neighbour-1];
+            if((particleInfo.data[(neighbourVert.id&0xFFFF)-1].state&0x03) != 0) {
+                const float thisDens = particleInfo.data[(thisVert.id&0xFFFF)-1].density;
+                const float neigDens = particleInfo.data[(neighbourVert.id&0xFFFF)-1].density;
+                if(thisDens <= neigDens) {
+                    const float multTTN = thisDens/neigDens;
+                    const float multNTT = neigDens/thisDens;
 
-    return vec3(posX, posY, posZ);
+                    float xB = particles.data[neighbour-1].velocity[0];
+                    float yB = particles.data[neighbour-1].velocity[1];
+                    float zB = particles.data[neighbour-1].velocity[2];
+
+                    particles.data[neighbour-1].velocity[0] = thisVert.velocity[0]*multTTN;
+                    particles.data[neighbour-1].velocity[1] = thisVert.velocity[1]*multTTN;
+                    particles.data[neighbour-1].velocity[2] = thisVert.velocity[2]*multTTN;
+
+                    thisVert.velocity[0] = xB*multNTT;
+                    thisVert.velocity[1] = yB*multNTT;
+                    thisVert.velocity[2] = zB*multNTT;
+                    break;
+                } else {
+                    // This density is greater than the collider density, the particle should switch position with the collider.
+                    // FIXME: [16.08.2021] A race condition might occure I think.
+                    particles.data[neighbour-1].position[0] -= stepX;
+                    particles.data[neighbour-1].position[1] -= stepY;
+                    particles.data[neighbour-1].position[2] -= stepZ;
+                }
+            }
+        }
+
+        thisVert.position[0] = newX;
+        thisVert.position[1] = newY;
+        thisVert.position[2] = newZ;
+    } while(uint(thisVert.position[0]) != destX || uint(thisVert.position[1]) != destY || uint(thisVert.position[2]) != destZ);
+
+    particles.data[updatedIndex] = thisVert;
 }
 
 #pragma PARTICLE_CODE
@@ -109,23 +146,24 @@ void updateParticle(uint globalOffset) {
     uint back = globalOffset+simulationInfo.xSize*simulationInfo.ySize;*/
 
     ArrayVertex v = particles.data[globalOffset];
+    moveVelocity(globalOffset);
 
     // For now we just move the particle down if possible.
-    if((v.id&0xFFFF) == 0) return;
+    /*if((v.id&0xFFFF) == 0) return;
     if(v.position[1] == 0) return; // Cannot move any lower
 
     uint offset = getOffset(uint(v.position[0]), uint(v.position[1])-1, uint(v.position[2]));
     if(offset == 0) {
         // Empty position found below.
         particles.data[globalOffset].position[1] -= 1;
-    }
+    }*/
 
     #pragma PARTICLE_SWITCH
 }
 
 void main() {
     uint globalId = gl_GlobalInvocationID.x;
-    if(globalId > simulationInfo.particleCount) return;
+    if(globalId >= simulationInfo.particleCount) return;
 
     updateParticle(globalId);
 }

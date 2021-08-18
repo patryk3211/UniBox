@@ -33,8 +33,8 @@ int main(int argc, char** argv) {
     camera->setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
     camera->orthographic(1024.0f/720.0f, -10.0f, 10.0f, zoom);
     //camera->perspective(90.0f, 1024.0f/720.0f);
-    zoom = 50.0f;
-    camera->setPosition(glm::vec3(60, 45, 0));
+    zoom = 70.0f;
+    camera->setPosition(glm::vec3(60, 65, 0));
 
     GraphicsPipeline* default_pipeline;
     {
@@ -80,13 +80,22 @@ int main(int argc, char** argv) {
     {
         std::vector<Voxel> particles;
 
-        for(int i = 0; i < 1000; i++) {
+        //for(int i = 0; i < 1000; i++) {
             Voxel voxel = {};
             voxel.type = 1;
-            voxel.position[0] = std::rand()%128;
-            voxel.position[1] = std::rand()%128;
+            voxel.position[0] = 128;//std::rand()%128;
+            voxel.position[1] = 0;//std::rand()%128;
+            voxel.velocity[0] = -1;//(float)(std::rand()%10)/10.0f;
+            voxel.velocity[1] = 0;//(float)(std::rand()%10)/10.0f;
+            voxel.paintColor[3] = 0.5;
+            voxel.paintColor[0] = 1;
             particles.push_back(voxel);
-        }
+
+            voxel.position[0] = 112;
+            voxel.velocity[0] = 1;
+            voxel.paintColor[3] = 0;
+            particles.push_back(voxel);
+        //}
 
         particleCount = particles.size();
         particleBuffer = new Buffer(sizeof(Voxel)*particleCount, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_CPU_TO_GPU);
@@ -114,8 +123,12 @@ int main(int argc, char** argv) {
         last=now;
         spdlog::info(dur.count());*/
 
-        sim->simulate(size, size, 1, particleCount, gridBuffer->getHandle(), particleBuffer->getHandle());
+        if(f == 0) sim->simulate(size, size, 1, particleCount, gridBuffer->getHandle(), particleBuffer->getHandle());
         mg->generate(particleCount, particleBuffer->getHandle(), meshBuffer->getHandle());
+
+        /*Voxel* particles = (Voxel*)particleBuffer->map();
+        spdlog::info(particles[0].position[0]);
+        particleBuffer->unmap();*/
 
         zoom += dir;
         if(zoom < 10.0f) dir = -dir;
@@ -126,7 +139,7 @@ int main(int argc, char** argv) {
 
         window.render();
         f++;
-        f = f%120;
+        f = f%60;
     }
 
     window.waitIdle();
