@@ -3,7 +3,13 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/spdlog/include",
+                "${workspaceFolder}/vk-bootstrap/src",
+                "${workspaceFolder}/glm",
+                "${workspaceFolder}/sol2/include",
+                "${workspaceFolder}/Lua/lua-5.4.3/include",
+                "${workspaceFolder}/json/include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang-10",

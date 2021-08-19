@@ -70,6 +70,7 @@ namespace unibox {
 
         ParticleProperties properties;
         std::optional<std::string> initScript;
+        std::optional<std::string> updateScript;
 
         bool valid;
 
@@ -87,11 +88,15 @@ namespace unibox {
         bool isValid();
 
         static Particle& getParticle(const std::string& name);
+        static uint getParticleId(const std::string& name);
         static void loadParticle(const std::string& name, const std::string& particleDir);
 
         static void loadParticles();
         static void loadParticlePack(const std::string& packRoot);
 
         static std::vector<Particle*>& getParticleArray() { return particlesIdArray; }
+
+        static std::string constructSwitchCode();
+        static std::string constructFunctions();
     };
 }

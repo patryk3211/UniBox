@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <spdlog/spdlog.h>
+#include <glslang/Public/ShaderLang.h>
 
 #include <vk-engine/window.hpp>
 #include <vk-engine/gfxpipeline.hpp>
@@ -10,6 +11,7 @@
 #include <compute/meshgen.hpp>
 #include <compute/simulator.hpp>
 #include <simulator/particle.hpp>
+#include <util/savefile.hpp>
 
 #include <chrono>
 #include <future>
@@ -67,8 +69,15 @@ int main(int argc, char** argv) {
     particleLoadSync.wait();
     auto particleInfoSync = std::async(std::launch::async, [mg](){ mg->createMeshGenerationInformation(); });
 
+    if(!glslang::InitializeProcess()) {
+        spdlog::error("Could not initialize glslang.");
+        return -1;
+    }
     Simulator* sim = new Simulator();
-    auto simInfoSync = std::async(std::launch::async, [sim](){ sim->createSimulationInformation(); });
+    auto simInfoSync = std::async(std::launch::async, [sim](){
+        sim->createSimulationShader();
+        sim->createSimulationInformation();
+    });
 
     Buffer* gridBuffer = new Buffer(sizeof(GridPoint)*256*64*64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_CPU_TO_GPU);
     Buffer* particleBuffer;
@@ -78,24 +87,21 @@ int main(int argc, char** argv) {
     spdlog::info("Random gen start");
     uint particleCount = 0;
     {
-        std::vector<Voxel> particles;
+        SaveFile file = SaveFile("saves/test.ubs");
+        file.readParticles();
+        std::vector<Voxel>& particles = file.getParticles();
 
-        //for(int i = 0; i < 1000; i++) {
+        /*for(int i = 0; i < 1000; i++) {
             Voxel voxel = {};
             voxel.type = 1;
-            voxel.position[0] = 128;//std::rand()%128;
-            voxel.position[1] = 0;//std::rand()%128;
-            voxel.velocity[0] = -1;//(float)(std::rand()%10)/10.0f;
-            voxel.velocity[1] = 0;//(float)(std::rand()%10)/10.0f;
-            voxel.paintColor[3] = 0.5;
-            voxel.paintColor[0] = 1;
+            voxel.position[0] = std::rand()%128;
+            voxel.position[1] = std::rand()%128;
+            //voxel.velocity[0] = -1;//(float)(std::rand()%10)/10.0f;
+            //voxel.velocity[1] = 0;//(float)(std::rand()%10)/10.0f;
+            //voxel.paintColor[3] = 0.5;
+            //voxel.paintColor[0] = 1;
             particles.push_back(voxel);
-
-            voxel.position[0] = 112;
-            voxel.velocity[0] = 1;
-            voxel.paintColor[3] = 0;
-            particles.push_back(voxel);
-        //}
+        }*/
 
         particleCount = particles.size();
         particleBuffer = new Buffer(sizeof(Voxel)*particleCount, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_CPU_TO_GPU);
@@ -123,7 +129,7 @@ int main(int argc, char** argv) {
         last=now;
         spdlog::info(dur.count());*/
 
-        if(f == 0) sim->simulate(size, size, 1, particleCount, gridBuffer->getHandle(), particleBuffer->getHandle());
+        sim->simulate(size, size, 1, particleCount, gridBuffer->getHandle(), particleBuffer->getHandle());
         mg->generate(particleCount, particleBuffer->getHandle(), meshBuffer->getHandle());
 
         /*Voxel* particles = (Voxel*)particleBuffer->map();
@@ -151,6 +157,8 @@ int main(int argc, char** argv) {
     delete sim;
     delete default_pipeline;
     delete camera;
+
+    glslang::FinalizeProcess();
 
     return 0;
 }

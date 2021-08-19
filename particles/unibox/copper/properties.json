@@ -1,0 +1,13 @@
+{
+    "displayName": "Copper",
+    "description": "A very conductive metal",
+
+    "state": "solid",
+    "gravity": true,
+
+    "density": 8.96,
+
+    "color": [ 209, 86, 38 ],
+
+    "update": "update.glsl:update"
+}

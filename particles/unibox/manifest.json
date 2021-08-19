@@ -8,6 +8,10 @@
         {
             "name": "sand",
             "location": "sand"
+        },
+        {
+            "name": "copper",
+            "location": "copper"
         }
     ]
 }

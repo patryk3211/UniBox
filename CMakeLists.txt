@@ -12,12 +12,14 @@ set(SOURCES src/main.cpp
             src/vk-engine/shader.cpp
             src/vk-engine/vma.cpp
             src/vk-engine/buffer.cpp
+            src/vk-engine/shader_assembler.cpp
             src/renderer/renderer.cpp
             src/renderer/buffer_renderer.cpp
             src/renderer/camera.cpp
             src/compute/meshgen.cpp
             src/compute/simulator.cpp
-            src/simulator/particle.cpp)
+            src/simulator/particle.cpp
+            src/util/savefile.cpp)
 
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -g)
 
@@ -33,7 +35,7 @@ target_include_directories(unibox PRIVATE ${CMAKE_SOURCE_DIR}/include
                                   PRIVATE ${CMAKE_SOURCE_DIR}/Lua/lua-5.4.3/include
                                   PRIVATE ${CMAKE_SOURCE_DIR}/json/include)
 
-target_link_libraries(unibox "-lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi" spdlog::spdlog vk-bootstrap::vk-bootstrap sol2::sol2 nlohmann_json::nlohmann_json)
+target_link_libraries(unibox "-lglfw -lvulkan -ldl -lX11 -lXxf86vm -lXrandr -lXi -lglslang -lMachineIndependent -lOSDependent -lGenericCodeGen -lOGLCompiler -lSPIRV -lpthread" spdlog::spdlog vk-bootstrap::vk-bootstrap sol2::sol2 nlohmann_json::nlohmann_json)
 
 add_custom_target(unibox-prepare-run
                   mkdir -p ${CMAKE_SOURCE_DIR}/run && cp ${CMAKE_BINARY_DIR}/unibox ${CMAKE_SOURCE_DIR}/run/unibox

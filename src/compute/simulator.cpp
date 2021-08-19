@@ -2,10 +2,13 @@
 
 #include <vk-engine/engine.hpp>
 #include <simulator/voxel.hpp>
+#include <vk-engine/shader_assembler.hpp>
+#include <simulator/particle.hpp>
 
 #include <spdlog/spdlog.h>
 
-#include <simulator/particle.hpp>
+#include <iostream>
+#include <fstream>
 
 using namespace unibox;
 
@@ -21,20 +24,11 @@ Simulator::Simulator() {
     CommandPool* pool = Engine::getInstance()->allocatePool(QueueType::COMPUTE);
 
     {
-        Shader shader = Shader(VK_SHADER_STAGE_COMPUTE_BIT, "main");
-        shader.addCode("shaders/compute/simulator.spv");
-
-        simulatePipeline.setShader(&shader);
         simulatePipeline.addDescriptors(0, 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT);
         simulatePipeline.addDescriptors(0, 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT);
         simulatePipeline.addDescriptors(0, 2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT);
 
         simulatePipeline.addPushConstant(0, sizeof(uint)*5, VK_SHADER_STAGE_COMPUTE_BIT);
-
-        if(!simulatePipeline.assemble()) {
-            spdlog::error("Could not assemble the Simulation Pipeline.");
-            return;
-        }
 
         simCmd = Engine::getInstance()->allocateBuffer(pool);
     }
@@ -251,4 +245,23 @@ void Simulator::createSimulationInformation() {
     SimulationParticleInfoPacket* pipPtr = (SimulationParticleInfoPacket*)ptr;
     for(int i = 0; i < particles.size(); i++) particles[i]->fillSimPip(pipPtr[i]);
     pib->unmap();
+}
+
+bool Simulator::createSimulationShader() {
+    Shader shader = Shader(VK_SHADER_STAGE_COMPUTE_BIT, "main");
+    ShaderAssembler assembler = ShaderAssembler("shaders/compute/simulator.comp");
+    assembler.pragmaInsert("PARTICLE_CODE", Particle::constructFunctions());
+    assembler.pragmaInsert("PARTICLE_SWITCH", Particle::constructSwitchCode());
+    std::vector<uint32_t>& code = assembler.compile(EShLanguage::EShLangCompute);
+    std::ofstream stream = std::ofstream("dump.comp", std::ios::binary);
+    assembler.dump(stream);
+
+    shader.addCode(code.size()*4, code.data());
+    simulatePipeline.setShader(&shader);
+
+    if(!simulatePipeline.assemble()) {
+        spdlog::error("Could not assemble the Simulation Pipeline.");
+        return false;
+    }
+    return true;
 }

@@ -138,6 +138,10 @@ Particle::Particle(const std::string& particleDir) {
                 initScriptStream.close();
             }
         }
+
+        auto updateJson = propJson.find("update");
+        if(updateJson == propJson.end()) updateScript = std::nullopt;
+        else updateScript = std::optional(particleDir + "/" + updateJson->get<std::string>());
     }
 
     typeId = 0;
@@ -279,4 +283,45 @@ void Particle::fillPip(ParticleInfoPacket& pip) {
 void Particle::fillSimPip(SimulationParticleInfoPacket& simPip) {
     simPip.density = properties.density;
     simPip.state = properties.state | (properties.affectedByGravity << 2);
+}
+
+std::string Particle::constructSwitchCode() {
+    std::string output;
+    for(auto& particle : particles) {
+        if(!particle.second.updateScript.has_value()) continue;
+        output.append("case ");
+        output.append(std::to_string(particle.second.typeId));
+        output.append(": partFuncType");
+        output.append(std::to_string(particle.second.typeId));
+        output.append("(vertex); break;\n");
+    }
+    output.append("default: break;\n");
+    return output;
+}
+
+std::string Particle::constructFunctions() {
+    std::string output;
+    for(auto& particle : particles) {
+        if(!particle.second.updateScript.has_value()) continue;
+        std::string& scriptStr = particle.second.updateScript.value();
+        std::string funcName = scriptStr.substr(scriptStr.find(':')+1);
+        std::string scriptPath = scriptStr.substr(0, scriptStr.find(':'));
+        std::string script;
+
+        {
+            std::ifstream fileStream = std::ifstream(scriptPath, std::ios::binary);
+            std::stringstream strStream;
+            strStream << fileStream.rdbuf();
+            script = strStream.str();
+        }
+
+        script.replace(script.find("void " + funcName + "(inout ArrayVertex ")+5, funcName.size(), "partFuncType" + std::to_string(particle.second.typeId));
+        output.append(script);
+        output.append("\n");
+    }
+    return output;
+}
+
+uint Particle::getParticleId(const std::string& name) {
+    return getParticle(name).typeId;
 }

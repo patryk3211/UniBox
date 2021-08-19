@@ -36,5 +36,6 @@ namespace unibox {
         bool isExecuting();
 
         void createSimulationInformation();
+        bool createSimulationShader();
     };
 }
