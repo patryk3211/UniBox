@@ -13,6 +13,7 @@ struct InputVertex {
     float temperature;
     float velocity[3];
     float position[3];
+    uint state;
 };
 
 struct OutputVertex {

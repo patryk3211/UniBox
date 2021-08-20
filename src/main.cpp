@@ -35,8 +35,8 @@ int main(int argc, char** argv) {
     camera->setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
     camera->orthographic(1024.0f/720.0f, -10.0f, 10.0f, zoom);
     //camera->perspective(90.0f, 1024.0f/720.0f);
-    zoom = 70.0f;
-    camera->setPosition(glm::vec3(60, 65, 0));
+    //zoom = 70.0f;
+    //camera->setPosition(glm::vec3(60, 65, 0));
 
     GraphicsPipeline* default_pipeline;
     {
@@ -87,21 +87,23 @@ int main(int argc, char** argv) {
     spdlog::info("Random gen start");
     uint particleCount = 0;
     {
-        SaveFile file = SaveFile("saves/test.ubs");
-        file.readParticles();
-        std::vector<Voxel>& particles = file.getParticles();
+        /*SaveFile file = SaveFile("saves/test.ubs");
+        file.readParticles();*/
+        std::vector<Voxel> particles;// = file.getParticles();
 
-        /*for(int i = 0; i < 1000; i++) {
+        for(int i = 0; i < 100000; i++) {
             Voxel voxel = {};
-            voxel.type = 1;
-            voxel.position[0] = std::rand()%128;
-            voxel.position[1] = std::rand()%128;
+            voxel.type = 2;
+            voxel.position[0] = std::rand()%1024;
+            voxel.position[1] = std::rand()%1024;
+            voxel.velocity[0] = -1;
+            voxel.velocity[1] = -1;
             //voxel.velocity[0] = -1;//(float)(std::rand()%10)/10.0f;
             //voxel.velocity[1] = 0;//(float)(std::rand()%10)/10.0f;
             //voxel.paintColor[3] = 0.5;
             //voxel.paintColor[0] = 1;
             particles.push_back(voxel);
-        }*/
+        }
 
         particleCount = particles.size();
         particleBuffer = new Buffer(sizeof(Voxel)*particleCount, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_CPU_TO_GPU);

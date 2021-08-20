@@ -9,6 +9,7 @@ struct ArrayVertex {
     float temperature;
     float velocity[3];
     float position[3];
+    uint state;
 };
 
 struct GridPoint {

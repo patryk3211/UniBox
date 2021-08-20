@@ -9,6 +9,7 @@ namespace unibox {
         float temperature;
         float velocity[3];
         float position[3];
+        unsigned int state;
     };
 
     struct GridPoint {
