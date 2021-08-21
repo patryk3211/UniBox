@@ -5,6 +5,7 @@
 #include <istream>
 #include <fstream>
 #include <algorithm>
+#include <regex>
 
 using namespace unibox;
 using namespace nlohmann;
@@ -302,6 +303,8 @@ std::string Particle::constructSwitchCode() {
     return output;
 }
 
+const std::regex funcDefRegex(R"(([A-Za-z0-9_]+) ([A-Za-z0-9_]+)\(([A-Za-z\s,]+(\/\*.+\*\/)*)+\))");
+
 std::string Particle::constructFunctions() {
     std::string output;
     for(auto& particle : particles) {
@@ -317,6 +320,20 @@ std::string Particle::constructFunctions() {
             strStream << fileStream.rdbuf();
             script = strStream.str();
         }
+
+        const std::string scriptCopy = script;
+        std::for_each(std::sregex_token_iterator(scriptCopy.begin(), scriptCopy.end(), funcDefRegex, 2), std::sregex_token_iterator(), [&particle, &script, &funcName](std::string func){
+            std::string newName = particle.first + "_" + func;
+            newName.replace(newName.find(':'), 1, "_");
+            if(funcName == func) funcName = newName;
+            
+            size_t pos;
+            size_t offset = 0;
+            while((pos = script.find(func, offset)) != std::string::npos) {
+                script.replace(pos, func.length(), newName);
+                offset = pos+newName.length();
+            }
+        });
 
         script.replace(script.find("void " + funcName + "(inout ArrayVertex ")+5, funcName.size(), "partFuncType" + std::to_string(particle.second.typeId));
         output.append(script);
@@ -357,6 +374,21 @@ std::string Particle::constructMeshFunctions() {
             strStream << fileStream.rdbuf();
             script = strStream.str();
         }
+
+        // FIXME: Why does this code lock up the world but the same ona above work just fine?!?!?!
+        /*const std::string scriptCopy = script;
+        std::for_each(std::sregex_token_iterator(scriptCopy.begin(), scriptCopy.end(), funcDefRegex, 2), std::sregex_token_iterator(), [&particle, &script, &funcName](std::string func){
+            std::string newName = particle.first + "_" + func;
+            newName.replace(newName.find(':'), 1, "_");
+            if(funcName == func) funcName = newName;
+            
+            size_t pos;
+            size_t offset = 0;
+            while((pos = script.find(func, offset)) != std::string::npos) {
+                script.replace(pos, func.length(), newName);
+                offset = pos+newName.length();
+            }
+        });*/
 
         script.replace(script.find("vec3 " + funcName + "(vec3 ")+5, funcName.size(), "partFuncType" + std::to_string(particle.second.typeId));
         output.append(script);
