@@ -102,5 +102,7 @@ namespace unibox {
 
         static std::string constructMeshSwitchCode();
         static std::string constructMeshFunctions();
+
+        static std::string constructTypeDefinitions();
     };
 }

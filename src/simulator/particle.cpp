@@ -364,3 +364,21 @@ std::string Particle::constructMeshFunctions() {
     }
     return output;
 }
+
+std::string Particle::constructTypeDefinitions() {
+    std::string output;
+    for(auto& particle : particles) {
+        output.append("#define ");
+
+        std::string name = particle.first;
+        name.replace(name.find(':'), 1, "_");
+        for(int i = 0; i < name.length(); i++) name[i] = toupper(name[i]);
+        output.append(name);
+
+        output.append(" ");
+        output.append(std::to_string(particle.second.typeId));
+
+        output.append("\n");
+    }
+    return output;
+}

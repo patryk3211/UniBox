@@ -252,6 +252,7 @@ bool Simulator::createSimulationShader() {
     ShaderAssembler assembler = ShaderAssembler("shaders/compute/simulator.comp");
     assembler.pragmaInsert("PARTICLE_CODE", Particle::constructFunctions());
     assembler.pragmaInsert("PARTICLE_SWITCH", Particle::constructSwitchCode());
+    assembler.pragmaInsert("PARTICLE_TYPES", Particle::constructTypeDefinitions());
     std::vector<uint32_t>& code = assembler.compile(EShLanguage::EShLangCompute);
     std::ofstream stream = std::ofstream("dump.comp", std::ios::binary);
     assembler.dump(stream);

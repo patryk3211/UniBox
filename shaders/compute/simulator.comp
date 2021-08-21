@@ -54,6 +54,8 @@ ArrayVertex getParticle(uint x, uint y, uint z);
 ParticleInfoPacket getParticleInfo(ArrayVertex particle);
 
 
+#pragma PARTICLE_TYPES
+
 #pragma PARTICLE_CODE
 
 void updateParticle(uint globalOffset) {

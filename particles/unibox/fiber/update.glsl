@@ -1,5 +1,5 @@
 bool fiber_checkNeighbour(inout ArrayVertex vertex, ArrayVertex neighbour) {
-    if((neighbour.id&0xFFFF) == (vertex.id&0xFFFF)) {
+    if((neighbour.id&0xFFFF) == UNIBOX_OPTICAL_FIBER) {
         if(neighbour.data[0] == 2) {
             vertex.data[0] = 2;
             vertex.data[1] = neighbour.data[1];

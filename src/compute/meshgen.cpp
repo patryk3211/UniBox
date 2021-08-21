@@ -100,6 +100,7 @@ void MeshGenPipeline::createMeshGenerationShader() {
     ShaderAssembler assembler = ShaderAssembler("shaders/compute/meshGen.comp");
     assembler.pragmaInsert("PARTICLE_CODE", Particle::constructMeshFunctions());
     assembler.pragmaInsert("PARTICLE_SWITCH", Particle::constructMeshSwitchCode());
+    assembler.pragmaInsert("PARTICLE_TYPES", Particle::constructTypeDefinitions());
     std::vector<uint32_t>& code = assembler.compile(EShLanguage::EShLangCompute);
     std::ofstream stream = std::ofstream("dump2.comp", std::ios::binary);
     assembler.dump(stream);

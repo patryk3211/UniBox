@@ -45,6 +45,9 @@ vec3 blend(vec3 a, vec3 b, float blendAmount) {
     return a*(1.0-blendAmount)+b*blendAmount;
 }
 
+
+#pragma PARTICLE_TYPES
+
 #pragma PARTICLE_CODE
 
 void main() {
