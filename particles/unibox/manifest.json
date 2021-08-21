@@ -14,8 +14,8 @@
             "location": "copper"
         },
         {
-            "name": "optical_fibre",
-            "location": "fibre"
+            "name": "optical_fiber",
+            "location": "fiber"
         }
     ]
 }
