@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
             particles.push_back(voxel);
         }*/
         Voxel voxel = {};
-        voxel.type = 2;
+        voxel.type = 1;
         voxel.data[1] = 0xFF000000;
         voxel.data[0] = 2;
         particles.push_back(voxel);
