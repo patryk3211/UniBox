@@ -1,0 +1,12 @@
+{
+    "displayName": "Optical Fibre",
+    "description": "Can transmit information in form of light",
+
+    "state": "solid",
+    "gravity": false,
+
+    "color": [ 0, 6, 64 ],
+
+    "draw": "draw.glsl:draw",
+    "update": "update.glsl:update"
+}

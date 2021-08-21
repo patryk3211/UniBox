@@ -5,7 +5,7 @@
     "state": "powder",
     "gravity": true,
 
-    "density": 1.442,
+    "density": 2,
 
     "phases": [
         {

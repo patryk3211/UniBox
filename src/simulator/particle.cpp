@@ -142,6 +142,10 @@ Particle::Particle(const std::string& particleDir) {
         auto updateJson = propJson.find("update");
         if(updateJson == propJson.end()) updateScript = std::nullopt;
         else updateScript = std::optional(particleDir + "/" + updateJson->get<std::string>());
+
+        auto drawJson = propJson.find("draw");
+        if(drawJson == propJson.end()) drawScript = std::nullopt;
+        else drawScript = std::optional(particleDir + "/" + drawJson->get<std::string>());
     }
 
     typeId = 0;
@@ -295,7 +299,6 @@ std::string Particle::constructSwitchCode() {
         output.append(std::to_string(particle.second.typeId));
         output.append("(vertex); break;\n");
     }
-    output.append("default: break;\n");
     return output;
 }
 
@@ -324,4 +327,40 @@ std::string Particle::constructFunctions() {
 
 uint Particle::getParticleId(const std::string& name) {
     return getParticle(name).typeId;
+}
+
+std::string Particle::constructMeshSwitchCode() {
+    std::string output;
+    for(auto& particle : particles) {
+        if(!particle.second.drawScript.has_value()) continue;
+        output.append("case ");
+        output.append(std::to_string(particle.second.typeId));
+        output.append(": baseColor = partFuncType");
+        output.append(std::to_string(particle.second.typeId));
+        output.append("(baseColor, inVert); break;\n");
+    }
+    return output;
+}
+
+std::string Particle::constructMeshFunctions() {
+    std::string output;
+    for(auto& particle : particles) {
+        if(!particle.second.drawScript.has_value()) continue;
+        std::string& scriptStr = particle.second.drawScript.value();
+        std::string funcName = scriptStr.substr(scriptStr.find(':')+1);
+        std::string scriptPath = scriptStr.substr(0, scriptStr.find(':'));
+        std::string script;
+
+        {
+            std::ifstream fileStream = std::ifstream(scriptPath, std::ios::binary);
+            std::stringstream strStream;
+            strStream << fileStream.rdbuf();
+            script = strStream.str();
+        }
+
+        script.replace(script.find("vec3 " + funcName + "(vec3 ")+5, funcName.size(), "partFuncType" + std::to_string(particle.second.typeId));
+        output.append(script);
+        output.append("\n");
+    }
+    return output;
 }

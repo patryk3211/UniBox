@@ -71,6 +71,7 @@ namespace unibox {
         ParticleProperties properties;
         std::optional<std::string> initScript;
         std::optional<std::string> updateScript;
+        std::optional<std::string> drawScript;
 
         bool valid;
 
@@ -98,5 +99,8 @@ namespace unibox {
 
         static std::string constructSwitchCode();
         static std::string constructFunctions();
+
+        static std::string constructMeshSwitchCode();
+        static std::string constructMeshFunctions();
     };
 }

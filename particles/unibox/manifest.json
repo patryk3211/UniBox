@@ -12,6 +12,10 @@
         {
             "name": "copper",
             "location": "copper"
+        },
+        {
+            "name": "optical_fibre",
+            "location": "fibre"
         }
     ]
 }

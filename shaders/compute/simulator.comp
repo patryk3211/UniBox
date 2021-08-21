@@ -60,7 +60,8 @@ void updateParticle(uint globalOffset) {
     ArrayVertex vertex = particles.data[globalOffset];
 
     switch(vertex.id&0xFFFF) {
-    #pragma PARTICLE_SWITCH
+        #pragma PARTICLE_SWITCH
+        default: break;
     }
 
     particles.data[globalOffset] = vertex;

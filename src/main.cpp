@@ -35,8 +35,8 @@ int main(int argc, char** argv) {
     camera->setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
     camera->orthographic(1024.0f/720.0f, -10.0f, 10.0f, zoom);
     //camera->perspective(90.0f, 1024.0f/720.0f);
-    //zoom = 70.0f;
-    //camera->setPosition(glm::vec3(60, 65, 0));
+    zoom = 70.0f;
+    camera->setPosition(glm::vec3(60, 65, 0));
 
     GraphicsPipeline* default_pipeline;
     {
@@ -65,14 +65,18 @@ int main(int argc, char** argv) {
     
     auto particleLoadSync = std::async(std::launch::async, Particle::loadParticles);
 
-    MeshGenPipeline* mg = new MeshGenPipeline();
-    particleLoadSync.wait();
-    auto particleInfoSync = std::async(std::launch::async, [mg](){ mg->createMeshGenerationInformation(); });
-
     if(!glslang::InitializeProcess()) {
         spdlog::error("Could not initialize glslang.");
         return -1;
     }
+
+    MeshGenPipeline* mg = new MeshGenPipeline();
+    particleLoadSync.wait();
+    auto particleInfoSync = std::async(std::launch::async, [mg](){
+        mg->createMeshGenerationShader();
+        mg->createMeshGenerationInformation();
+    });
+
     Simulator* sim = new Simulator();
     auto simInfoSync = std::async(std::launch::async, [sim](){
         sim->createSimulationShader();
@@ -91,19 +95,45 @@ int main(int argc, char** argv) {
         file.readParticles();*/
         std::vector<Voxel> particles;// = file.getParticles();
 
-        for(int i = 0; i < 100000; i++) {
+        /*for(int i = 0; i < 100000; i++) {
             Voxel voxel = {};
             voxel.type = 2;
             voxel.position[0] = std::rand()%1024;
             voxel.position[1] = std::rand()%1024;
-            voxel.velocity[0] = -1;
-            voxel.velocity[1] = -1;
-            //voxel.velocity[0] = -1;//(float)(std::rand()%10)/10.0f;
-            //voxel.velocity[1] = 0;//(float)(std::rand()%10)/10.0f;
-            //voxel.paintColor[3] = 0.5;
-            //voxel.paintColor[0] = 1;
+            particles.push_back(voxel);
+        }*/
+        Voxel voxel = {};
+        voxel.type = 2;
+        voxel.data[1] = 0xFF000000;
+        voxel.data[0] = 2;
+        particles.push_back(voxel);
+
+        voxel.data[1] = 0x00000000;
+        voxel.data[0] = 0;
+
+        for(int i = 0; i < 32; i++) {
+            voxel.position[0]++;
             particles.push_back(voxel);
         }
+
+        for(int i = 0; i < 32; i++) {
+            voxel.position[1]++;
+            particles.push_back(voxel);
+        }
+
+        for(int i = 0; i < 32; i++) {
+            voxel.position[0]--;
+            particles.push_back(voxel);
+        }
+
+        for(int i = 0; i < 30; i++) {
+            voxel.position[1]--;
+            particles.push_back(voxel);
+        }
+
+        voxel.position[1]--;
+        voxel.data[0] = 1;
+        particles.push_back(voxel);
 
         particleCount = particles.size();
         particleBuffer = new Buffer(sizeof(Voxel)*particleCount, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_CPU_TO_GPU);
@@ -131,7 +161,7 @@ int main(int argc, char** argv) {
         last=now;
         spdlog::info(dur.count());*/
 
-        sim->simulate(size, size, 1, particleCount, gridBuffer->getHandle(), particleBuffer->getHandle());
+        /*if(f == 0)*/ sim->simulate(size, size, 1, particleCount, gridBuffer->getHandle(), particleBuffer->getHandle());
         mg->generate(particleCount, particleBuffer->getHandle(), meshBuffer->getHandle());
 
         /*Voxel* particles = (Voxel*)particleBuffer->map();
@@ -147,7 +177,7 @@ int main(int argc, char** argv) {
 
         window.render();
         f++;
-        f = f%60;
+        f = f%30;
     }
 
     window.waitIdle();

@@ -8,7 +8,7 @@ namespace unibox {
     class MeshGenPipeline {
         VkDevice device;
 
-        ComputePipeline* pipeline;
+        ComputePipeline pipeline;
         CommandBuffer* buffer;
 
         Buffer* pib; // Particle Info Buffer
@@ -22,5 +22,6 @@ namespace unibox {
         bool isExecuting();
 
         void createMeshGenerationInformation();
+        void createMeshGenerationShader();
     };
 }
