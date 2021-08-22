@@ -303,7 +303,7 @@ std::string Particle::constructSwitchCode() {
     return output;
 }
 
-const std::regex funcDefRegex(R"(([A-Za-z0-9_]+) ([A-Za-z0-9_]+)\(([A-Za-z\s,]+(\/\*.+\*\/)*)+\))");
+const std::regex funcDefRegex(R"((\w+) (\w+)\(([\w\s,]+(\/\*.+\*\/)*)\))");
 
 std::string Particle::constructFunctions() {
     std::string output;
@@ -329,7 +329,7 @@ std::string Particle::constructFunctions() {
             
             size_t pos;
             size_t offset = 0;
-            while((pos = script.find(func, offset)) != std::string::npos) {
+            while((pos = script.find(func+"(", offset)) != std::string::npos) {
                 script.replace(pos, func.length(), newName);
                 offset = pos+newName.length();
             }
@@ -375,8 +375,7 @@ std::string Particle::constructMeshFunctions() {
             script = strStream.str();
         }
 
-        // FIXME: Why does this code lock up the world but the same ona above work just fine?!?!?!
-        /*const std::string scriptCopy = script;
+        const std::string scriptCopy = script;
         std::for_each(std::sregex_token_iterator(scriptCopy.begin(), scriptCopy.end(), funcDefRegex, 2), std::sregex_token_iterator(), [&particle, &script, &funcName](std::string func){
             std::string newName = particle.first + "_" + func;
             newName.replace(newName.find(':'), 1, "_");
@@ -384,11 +383,11 @@ std::string Particle::constructMeshFunctions() {
             
             size_t pos;
             size_t offset = 0;
-            while((pos = script.find(func, offset)) != std::string::npos) {
+            while((pos = script.find(func+"(", offset)) != std::string::npos) {
                 script.replace(pos, func.length(), newName);
                 offset = pos+newName.length();
             }
-        });*/
+        });
 
         script.replace(script.find("vec3 " + funcName + "(vec3 ")+5, funcName.size(), "partFuncType" + std::to_string(particle.second.typeId));
         output.append(script);
