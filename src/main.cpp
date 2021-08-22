@@ -15,6 +15,7 @@
 
 #include <chrono>
 #include <future>
+#include <cmath>
 
 #include <glm/vec4.hpp>
 
@@ -149,17 +150,20 @@ int main(int argc, char** argv) {
     BufferRenderer render = BufferRenderer("default", particleCount*6, meshBuffer);
     window.getEngine().addRenderFunction(Renderer::renderAll);
 
-    //auto last = std::chrono::high_resolution_clock::now();
+    auto last = std::chrono::high_resolution_clock::now();
 
     int f = 1;
 
     simInfoSync.wait();
     while(!window.shouldClose()) {
         window.frameStart();
-        /*auto now = std::chrono::high_resolution_clock::now();
-        auto dur = std::chrono::duration_cast<std::chrono::microseconds>(now-last);
-        last=now;
-        spdlog::info(dur.count());*/
+        if(f == 0) {
+            auto now = std::chrono::high_resolution_clock::now();
+            auto dur = std::chrono::duration_cast<std::chrono::microseconds>(now-last);
+            last=now;
+            
+            spdlog::info(std::to_string(1.0/(dur.count()/60000000.0)) + " FPS");
+        }
 
         /*if(f == 0)*/ sim->simulate(size, size, 1, particleCount, gridBuffer->getHandle(), particleBuffer->getHandle());
         mg->generate(particleCount, particleBuffer->getHandle(), meshBuffer->getHandle());
@@ -177,7 +181,7 @@ int main(int argc, char** argv) {
 
         window.render();
         f++;
-        f = f%30;
+        f = f%60;
     }
 
     window.waitIdle();
