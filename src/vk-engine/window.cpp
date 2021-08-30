@@ -53,3 +53,10 @@ void Window::frameStart() {
 void Window::render() {
     engine.draw();
 }
+
+glm::vec2 Window::getCursorPos() {
+    double xPos;
+    double yPos;
+    glfwGetCursorPos(window, &xPos, &yPos);
+    return glm::vec2(xPos, yPos);
+}

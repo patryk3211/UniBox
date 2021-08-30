@@ -12,6 +12,7 @@
 #include <compute/simulator.hpp>
 #include <simulator/particle.hpp>
 #include <util/savefile.hpp>
+#include <simulator/particle_grid.hpp>
 
 #include <chrono>
 #include <future>
@@ -39,7 +40,7 @@ int main(int argc, char** argv) {
     zoom = 70.0f;
     camera->setPosition(glm::vec3(60, 65, 0));
 
-    GraphicsPipeline* default_pipeline;
+    /*GraphicsPipeline* default_pipeline;
     {
         Shader vert = Shader(VK_SHADER_STAGE_VERTEX_BIT, "main");
         if(!vert.addCode("shaders/default/vertex.spv")) return false;
@@ -62,99 +63,64 @@ int main(int argc, char** argv) {
         default_pipeline->bindBufferToDescriptor(0, 0, camera->getBuffer().getHandle(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, sizeof(glm::mat4)*2);
 
         Renderer::registerMaterial("default", default_pipeline);
-    }
+    }*/
     
     auto particleLoadSync = std::async(std::launch::async, Particle::loadParticles);
 
-    if(!glslang::InitializeProcess()) {
-        spdlog::error("Could not initialize glslang.");
-        return -1;
-    }
-
-    MeshGenPipeline* mg = new MeshGenPipeline();
     particleLoadSync.wait();
-    auto particleInfoSync = std::async(std::launch::async, [mg](){
-        mg->createMeshGenerationShader();
-        mg->createMeshGenerationInformation();
-    });
+    ParticleGrid::init(*camera);
 
-    Simulator* sim = new Simulator();
-    auto simInfoSync = std::async(std::launch::async, [sim](){
-        sim->createSimulationShader();
-        sim->createSimulationInformation();
-    });
-
-    Buffer* gridBuffer = new Buffer(sizeof(GridPoint)*256*64*64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_CPU_TO_GPU);
-    Buffer* particleBuffer;
-    
-    Buffer* meshBuffer = new Buffer((sizeof(float)*4*2)*256*6*64*64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_GPU_ONLY);
+    ParticleGrid::waitInitComplete();
+    ParticleGrid* grid = new ParticleGrid(1024, 1024, 1);
 
     spdlog::info("Random gen start");
     uint particleCount = 0;
     {
         /*SaveFile file = SaveFile("saves/test.ubs");
         file.readParticles();*/
-        std::vector<Voxel> particles;// = file.getParticles();
+        //std::vector<Voxel> particles;// = file.getParticles();
 
-        /*for(int i = 0; i < 100000; i++) {
-            Voxel voxel = {};
-            voxel.type = 2;
-            voxel.position[0] = std::rand()%1024;
-            voxel.position[1] = std::rand()%1024;
-            particles.push_back(voxel);
-        }*/
         Voxel voxel = {};
         voxel.type = 1;
         voxel.data[1] = 0xFF000000;
         voxel.data[0] = 2;
-        particles.push_back(voxel);
+        grid->addVoxel(voxel);
 
         voxel.data[1] = 0x00000000;
         voxel.data[0] = 0;
 
         for(int i = 0; i < 32; i++) {
             voxel.position[0]++;
-            particles.push_back(voxel);
+            grid->addVoxel(voxel);
         }
 
         for(int i = 0; i < 32; i++) {
             voxel.position[1]++;
-            particles.push_back(voxel);
+            grid->addVoxel(voxel);
         }
 
         for(int i = 0; i < 32; i++) {
             voxel.position[0]--;
-            particles.push_back(voxel);
+            grid->addVoxel(voxel);
         }
 
         for(int i = 0; i < 30; i++) {
             voxel.position[1]--;
-            particles.push_back(voxel);
+            grid->addVoxel(voxel);
         }
 
         voxel.position[1]--;
         voxel.data[0] = 1;
-        particles.push_back(voxel);
-
-        particleCount = particles.size();
-        particleBuffer = new Buffer(sizeof(Voxel)*particleCount, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_CPU_TO_GPU);
-        particleBuffer->store(particles.data(), 0, sizeof(Voxel)*particleCount);
+        grid->addVoxel(voxel);
     }
     spdlog::info("Random gen end");
 
-    uint size = 16*64;
-
-    particleInfoSync.wait();
-
-    mg->generate(particleCount, particleBuffer->getHandle(), meshBuffer->getHandle());
-    BufferRenderer render = BufferRenderer("default", particleCount*6, meshBuffer);
-    window.getEngine().addRenderFunction(Renderer::renderAll);
+    window.getEngine().addRenderFunction(ParticleGrid::renderAll);
 
     auto last = std::chrono::high_resolution_clock::now();
 
     int f = 1;
 
-    simInfoSync.wait();
     while(!window.shouldClose()) {
         window.frameStart();
         if(f == 0) {
@@ -165,12 +131,31 @@ int main(int argc, char** argv) {
             spdlog::info(std::to_string(1.0/(dur.count()/60000000.0)) + " FPS");
         }
 
-        /*if(f == 0)*/ sim->simulate(size, size, 1, particleCount, gridBuffer->getHandle(), particleBuffer->getHandle());
-        mg->generate(particleCount, particleBuffer->getHandle(), meshBuffer->getHandle());
+        grid->simulate();
 
-        /*Voxel* particles = (Voxel*)particleBuffer->map();
-        spdlog::info(particles[0].position[0]);
-        particleBuffer->unmap();*/
+        glm::vec2 mouse = window.getCursorPos();
+        mouse /= glm::vec2(1024/2.0, -720/2.0);
+        mouse -= glm::vec2(1.0, -1.0);
+        mouse *= glm::vec2(70*(1024.0/720.0), 70);
+        mouse += glm::vec2(camera->getPosition().x, camera->getPosition().y);
+
+        if(mouse.x > 0 && mouse.y > 0 && mouse.x < 1024 && mouse.y < 1024) {
+            grid->addVoxel({
+                .type = 3,
+                .velocity = {
+                    0,
+                    -1,
+                    0
+                },
+                .position = {
+                    mouse.x,
+                    mouse.y,
+                    0
+                }
+            });
+        }
+
+        //spdlog::info("X " + std::to_string(mouse.x) + " Y " + std::to_string(mouse.y));
 
         zoom += dir;
         if(zoom < 10.0f) dir = -dir;
@@ -186,13 +171,10 @@ int main(int argc, char** argv) {
 
     window.waitIdle();
 
-    delete gridBuffer;
-    delete particleBuffer;
-    delete meshBuffer;
-    delete mg;
-    delete sim;
-    delete default_pipeline;
     delete camera;
+    delete grid;
+
+    ParticleGrid::finalize();
 
     glslang::FinalizeProcess();
 

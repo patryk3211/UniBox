@@ -9,6 +9,7 @@
 #include <list>
 #include <thread>
 #include <unordered_map>
+#include <mutex>
 
 #include <vk-engine/commandpool.hpp>
 #include <vk-engine/commandbuffer.hpp>
@@ -81,6 +82,8 @@ namespace unibox {
 
         VkDescriptorPool create_descriptor_pool();
 
+        std::recursive_mutex descriptorAllocatorLock;
+
     public:
         Engine();
         ~Engine();
@@ -96,6 +99,8 @@ namespace unibox {
         VkRenderPass getRenderPass() { return renderpass; }
 
         void addRenderFunction(void (*renderFunc)(VkCommandBuffer));
+
+        bool isRendering();
 
         CommandBuffer* allocateBuffer(QueueType type);
         CommandBuffer* allocateBuffer(CommandPool* pool);

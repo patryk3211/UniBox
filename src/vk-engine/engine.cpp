@@ -59,6 +59,12 @@ void Engine::waitIdle() {
     vkDeviceWaitIdle(device);
 }
 
+bool Engine::isRendering() {
+    VkResult res = vkGetFenceStatus(device, renderFence);
+    if(res != VK_NOT_READY && res != VK_SUCCESS) spdlog::error("Could not get status of render fence.");
+    return res == VK_NOT_READY;
+}
+
 bool Engine::init(GLFWwindow* window) {
     InstanceBuilder instanceBuilder;
     instanceBuilder.set_app_name("UniBox")
@@ -342,6 +348,7 @@ VkDescriptorPool Engine::create_descriptor_pool() {
 }
 
 VkDescriptorSet Engine::allocate_descriptor_set(VkDescriptorSetLayout layout) {
+    std::lock_guard<std::recursive_mutex> lk(descriptorAllocatorLock);
     if(lastPool == 0) create_descriptor_pool();
     VkDescriptorSetAllocateInfo allocInfo = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,

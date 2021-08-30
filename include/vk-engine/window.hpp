@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 
 #include <vk-engine/engine.hpp>
+#include <glm/vec2.hpp>
 
 namespace unibox {
     class Window {
@@ -20,6 +21,8 @@ namespace unibox {
         void render();
 
         void waitIdle();
+
+        glm::vec2 getCursorPos();
 
         GLFWwindow* getWindow();
         Engine& getEngine();

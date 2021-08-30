@@ -19,6 +19,7 @@ set(SOURCES src/main.cpp
             src/compute/meshgen.cpp
             src/compute/simulator.cpp
             src/simulator/particle.cpp
+            src/simulator/particle_grid.cpp
             src/util/savefile.cpp)
 
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -g)
