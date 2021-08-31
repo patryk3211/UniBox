@@ -1,0 +1,13 @@
+{
+    "displayName": "Photon",
+    "description": "A particle of light",
+
+    "state": "gas",
+    "gravity": false,
+
+    "density": 0,
+
+    "color": [ 255, 255, 255 ],
+    
+    "update": "update.glsl:update"
+}

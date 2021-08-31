@@ -82,11 +82,25 @@ int main(int argc, char** argv) {
 
         Voxel voxel = {};
         voxel.type = 1;
+        /*voxel.stype = 1;
         voxel.data[1] = 0xFF000000;
-        voxel.data[0] = 2;
+        voxel.data[0] = 2;*/
+        voxel.data[0] = 0xFFFFFFFF;
+        voxel.position[0] = 32;
+        voxel.velocity[0] = 0;
+        voxel.velocity[1] = 1;
         grid->addVoxel(voxel);
 
-        voxel.data[1] = 0x00000000;
+        voxel.type = 2;
+        voxel.data[0] = 0;
+        voxel.position[0] = 0;
+        voxel.position[1] = 8;
+        for(int i = 0; i < 64; i++) {
+            voxel.position[0]++;
+            grid->addVoxel(voxel);
+        }
+
+        /*voxel.data[1] = 0x00000000;
         voxel.data[0] = 0;
 
         for(int i = 0; i < 32; i++) {
@@ -111,7 +125,10 @@ int main(int argc, char** argv) {
 
         voxel.position[1]--;
         voxel.data[0] = 1;
-        grid->addVoxel(voxel);
+        grid->addVoxel(voxel);*/
+        /*SaveFile file = SaveFile("saves/test.ubs");
+        file.readParticles();
+        grid->addVoxels(0, 0, 0, file.getParticles());*/
     }
     spdlog::info("Random gen end");
 
@@ -131,7 +148,7 @@ int main(int argc, char** argv) {
             spdlog::info(std::to_string(1.0/(dur.count()/60000000.0)) + " FPS");
         }
 
-        grid->simulate();
+        if(f==0)grid->simulate();
 
         glm::vec2 mouse = window.getCursorPos();
         mouse /= glm::vec2(1024/2.0, -720/2.0);
@@ -139,12 +156,12 @@ int main(int argc, char** argv) {
         mouse *= glm::vec2(70*(1024.0/720.0), 70);
         mouse += glm::vec2(camera->getPosition().x, camera->getPosition().y);
 
-        if(mouse.x > 0 && mouse.y > 0 && mouse.x < 1024 && mouse.y < 1024) {
+        /*if(mouse.x > 0 && mouse.y > 0 && mouse.x < 1024 && mouse.y < 1024) {
             grid->addVoxel({
-                .type = 3,
+                .type = 1,
                 .velocity = {
                     0,
-                    -1,
+                    0,
                     0
                 },
                 .position = {
@@ -153,7 +170,7 @@ int main(int argc, char** argv) {
                     0
                 }
             });
-        }
+        }*/
 
         //spdlog::info("X " + std::to_string(mouse.x) + " Y " + std::to_string(mouse.y));
 

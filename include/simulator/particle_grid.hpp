@@ -39,11 +39,14 @@ namespace unibox {
         Buffer gridBuffer;
 
         bool dirty;
+
+        uint allocateParticleIndex();
     public:
         ParticleGrid(uint width, uint height, uint length);
         ~ParticleGrid();
 
         void addVoxel(const Voxel& voxel);
+        void addVoxels(int x, int y, int z, const std::vector<Voxel>& voxels);
         void eraseVoxel(uint x, uint y, uint z);
         std::optional<Voxel*> getVoxel(uint x, uint y, uint z);
         bool isEmpty(uint x, uint y, uint z);

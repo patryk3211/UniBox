@@ -60,30 +60,45 @@ void SaveFile::particleReadVersion1() {
         uint32_t particleCount;
         fileStream.read((char*)&particleCount, 4);
         for(uint32_t i = 0; i < particleCount; i++) {
-            char data[32];
-            fileStream.read(data, 32);
-            uint16_t typeId = *(uint16_t*)(data);
-            uint16_t stypeId = *(uint16_t*)(data+2);
-            float* dataf = (float*)(data+4);
-            uint32_t* datai = (uint32_t*)(data+20);
-            
+            uint8_t flags;
+            fileStream.read((char*)&flags, 1);
+
             Voxel voxel = {};
-            voxel.type = mappings[typeId];
-            voxel.stype = mappings[stypeId];
+            uint16_t type;
+            fileStream.read((char*)&type, 2);
+            voxel.type = mappings[type];
+            fileStream.read((char*)&voxel.temperature, sizeof(float));
+            uint32_t position[3];
+            fileStream.read((char*)&position, sizeof(position));
+            voxel.position[0] = position[0];
+            voxel.position[1] = position[1];
+            voxel.position[2] = position[2];
 
-            voxel.temperature = dataf[0];
-
-            voxel.velocity[0] = dataf[1];
-            voxel.velocity[1] = dataf[2];
-            voxel.velocity[2] = dataf[3];
-
-            voxel.position[0] = datai[0];
-            voxel.position[1] = datai[1];
-            voxel.position[2] = datai[2];
+            if(flags & 0x01) {
+                // Include velocity
+                fileStream.read((char*)&voxel.velocity, sizeof(voxel.velocity));
+            }
+            if(flags & 0x02) {
+                // Include data
+                uint16_t stype;
+                fileStream.read((char*)&stype, 2);
+                voxel.stype = mappings[stype];
+                fileStream.read((char*)&voxel.data, sizeof(voxel.data));
+            }
+            if(flags & 0x04) {
+                // Include paint
+                uint8_t colors[4];
+                fileStream.read((char*)&colors, sizeof(colors));
+                voxel.paintColor[0] = colors[0]/255.0;
+                voxel.paintColor[1] = colors[1]/255.0;
+                voxel.paintColor[2] = colors[2]/255.0;
+                voxel.paintColor[3] = colors[3]/255.0;
+            }
 
             particles.push_back(voxel);
         }
     }
+    fileStream.close();
 }
 
 void SaveFile::readParticles() {

@@ -16,6 +16,10 @@
         {
             "name": "optical_fiber",
             "location": "fiber"
+        },
+        {
+            "name": "photon",
+            "location": "photon"
         }
     ]
 }

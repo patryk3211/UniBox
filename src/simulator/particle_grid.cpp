@@ -46,8 +46,7 @@ ParticleGrid::~ParticleGrid() {
     delete meshBuffer;
 }
 
-void ParticleGrid::addVoxel(const Voxel& voxel) {
-    if(!isEmpty(static_cast<uint>(voxel.position[0]), static_cast<uint>(voxel.position[1]), static_cast<uint>(voxel.position[2]))) return;
+uint ParticleGrid::allocateParticleIndex() {
     if(freeIndices.size() == 0) {
         size_t base = particleCount;
         Buffer* oldBuffer = this->particleBuffer;
@@ -75,8 +74,27 @@ void ParticleGrid::addVoxel(const Voxel& voxel) {
     }
     uint index = *freeIndices.begin();
     freeIndices.pop_front();
+    return index;
+}
+
+void ParticleGrid::addVoxel(const Voxel& voxel) {
+    if(!isEmpty(static_cast<uint>(voxel.position[0]), static_cast<uint>(voxel.position[1]), static_cast<uint>(voxel.position[2]))) return;
+    uint index = allocateParticleIndex();
     particles[index] = voxel;
     this->particleCount++;
+    dirty = true;
+}
+
+void ParticleGrid::addVoxels(int x, int y, int z, const std::vector<Voxel>& voxels) {
+    for(int i = 0; i < voxels.size(); i++) {
+        Voxel v = voxels[i];
+        v.position[0] += x;
+        v.position[1] += y;
+        v.position[2] += z;
+        if(!isEmpty(static_cast<uint>(v.position[0]), static_cast<uint>(v.position[1]), static_cast<uint>(v.position[2]))) continue;
+        particles[allocateParticleIndex()] = v;
+        this->particleCount++;
+    }
     dirty = true;
 }
 
