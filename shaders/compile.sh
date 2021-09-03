@@ -11,6 +11,4 @@ mkdir -p $OUTPUT/shaders/compute
 glslc default/default.vert -o $OUTPUT/shaders/default/vertex.spv
 glslc default/default.frag -o $OUTPUT/shaders/default/fragment.spv
 cp compute/meshGenerator.comp $OUTPUT/shaders/compute/meshGen.comp
-cp compute/simulator.comp $OUTPUT/shaders/compute/simulator.comp
-glslc compute/gridBuilder.comp -o $OUTPUT/shaders/compute/gridBuilder.spv
-glslc compute/gridResetter.comp -o $OUTPUT/shaders/compute/gridResetter.spv
+cp compute/simulator.cl $OUTPUT/shaders/compute/simulator.cl

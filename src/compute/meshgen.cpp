@@ -3,7 +3,7 @@
 #include <vk-engine/engine.hpp>
 #include <simulator/voxel.hpp>
 #include <simulator/particle.hpp>
-#include <vk-engine/shader_assembler.hpp>
+#include <util/shader_assembler.hpp>
 
 #include <spdlog/spdlog.h>
 

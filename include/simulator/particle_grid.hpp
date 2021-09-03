@@ -9,8 +9,8 @@
 #include <simulator/voxel.hpp>
 #include <compute/simulator.hpp>
 #include <compute/meshgen.hpp>
-#include <vk-engine/buffer.hpp>
-#include <vk-engine/gfxpipeline.hpp>
+//#include <vk-engine/buffer.hpp>
+//#include <vk-engine/gfxpipeline.hpp>
 #include <renderer/camera.hpp>
 
 namespace unibox {
@@ -20,7 +20,7 @@ namespace unibox {
         static Simulator* simulator;
         static MeshGenPipeline* meshGenerator;
 
-        static GraphicsPipeline* pipeline;
+        //static GraphicsPipeline* pipeline;
 
         static std::mutex simLock;
         static std::mutex meshGenLock;
@@ -34,9 +34,11 @@ namespace unibox {
 
         uint particleCount;
 
-        Buffer* particleBuffer;
+        /*Buffer* particleBuffer;
         Buffer* meshBuffer;
-        Buffer gridBuffer;
+        Buffer gridBuffer;*/
+        cl::Buffer gridBuffer;
+        cl::Buffer* particleBuffer;
 
         bool dirty;
 

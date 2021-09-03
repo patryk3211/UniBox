@@ -13,6 +13,7 @@
 #include <simulator/particle.hpp>
 #include <util/savefile.hpp>
 #include <simulator/particle_grid.hpp>
+#include <cl-engine/engine.hpp>
 
 #include <chrono>
 #include <future>
@@ -24,6 +25,8 @@ using namespace unibox;
 
 int main(int argc, char** argv) {
     spdlog::info("Welcome to UniBox!");
+
+    ClEngine clEngine = ClEngine();
 
     Window window = Window();
     if(!window.init()) return -1;
@@ -148,7 +151,9 @@ int main(int argc, char** argv) {
             spdlog::info(std::to_string(1.0/(dur.count()/60000000.0)) + " FPS");
         }
 
-        if(f==0)grid->simulate();
+        grid->simulate();
+        auto voxel = grid->getVoxel(1, 8, 0);
+        if(voxel.has_value()) spdlog::info(voxel.value()->data[0]);
 
         glm::vec2 mouse = window.getCursorPos();
         mouse /= glm::vec2(1024/2.0, -720/2.0);

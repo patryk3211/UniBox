@@ -1,4 +1,4 @@
-#include <vk-engine/shader_assembler.hpp>
+#include <util/shader_assembler.hpp>
 
 #include <istream>
 #include <fstream>
@@ -70,6 +70,20 @@ std::vector<uint32_t>& ShaderAssembler::compile(EShLanguage language) {
     
     glslang::GlslangToSpv(*program.getIntermediate(language), bytecode);
     return bytecode;
+}
+
+cl::Program* ShaderAssembler::compile(const cl::Context& context, const cl::Device& device) {
+	cl::Program::Sources source(1, std::make_pair(code.c_str(), code.size()+1));
+	cl::Program* program = new cl::Program(context, source);
+	
+	if(program->build() != CL_BUILD_SUCCESS) {
+		spdlog::error("Could not build OpenCL program. Status: " + program->getBuildInfo<CL_PROGRAM_BUILD_STATUS>(device));
+		spdlog::error("Log: " + program->getBuildInfo<CL_PROGRAM_BUILD_LOG>(device));
+		delete program;
+		return 0;
+	}
+
+	return program;
 }
 
 void ShaderAssembler::dump(std::ostream& stream) {
