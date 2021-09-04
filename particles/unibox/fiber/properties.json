@@ -5,7 +5,5 @@
     "state": "solid",
     "gravity": false,
 
-    "color": [ 0, 6, 64 ],
-
-    "draw": "draw.glsl:draw"
+    "color": [ 0, 6, 64 ]
 }

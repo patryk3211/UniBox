@@ -12,7 +12,7 @@ std::list<ParticleGrid*> ParticleGrid::grids = std::list<ParticleGrid*>();
 Simulator* ParticleGrid::simulator = 0;
 MeshGenPipeline* ParticleGrid::meshGenerator = 0;
 
-//GraphicsPipeline* ParticleGrid::pipeline = 0;
+GraphicsPipeline* ParticleGrid::pipeline = 0;
 
 std::mutex ParticleGrid::simLock = std::mutex();
 std::mutex ParticleGrid::meshGenLock = std::mutex();
@@ -34,7 +34,8 @@ ParticleGrid::ParticleGrid(uint width, uint height, uint length) :
     
     for(int i = 0; i < 256; i++) freeIndices.push_back(i);
 
-    //meshBuffer = new Buffer((sizeof(float)*4*2)*6*256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_GPU_ONLY);
+    meshBuffer = new cl::Buffer(ClEngine::getInstance()->getContext(), CL_MEM_READ_WRITE, (sizeof(float)*4*2)*6*256);
+    meshBufferV = new Buffer((sizeof(float)*4*2)*6*256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
     dirty = true;
 
@@ -46,7 +47,8 @@ ParticleGrid::~ParticleGrid() {
     cl::CommandQueue queue(ClEngine::getInstance()->getContext(), ClEngine::getInstance()->getDevice());
     queue.enqueueUnmapMemObject(*particleBuffer, particles);
     delete particleBuffer;
-    //delete meshBuffer;
+    delete meshBuffer;
+    delete meshBufferV;
 }
 
 uint ParticleGrid::allocateParticleIndex() {
@@ -65,12 +67,14 @@ uint ParticleGrid::allocateParticleIndex() {
 
         for(int i = 0; i < 256; i++) freeIndices.push_back(i+base);
 
-        /*meshGenLock.lock();
-        while(meshGenerator->isExecuting() || Engine::getInstance()->isRendering());
+        meshGenLock.lock();
+        while(Engine::getInstance()->isRendering());
         delete this->meshBuffer;
+        delete this->meshBufferV;
         meshGenLock.unlock();
 
-        this->meshBuffer = new Buffer((sizeof(float)*4*2)*6*(particleCount+256), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_GPU_ONLY);*/
+        this->meshBuffer = new cl::Buffer(ClEngine::getInstance()->getContext(), CL_MEM_READ_WRITE, (sizeof(float)*4*2)*6*(particleCount+256));
+        this->meshBufferV = new Buffer((sizeof(float)*4*2)*6*(particleCount+256), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_CPU_TO_GPU);
     }
     uint index = *freeIndices.begin();
     freeIndices.pop_front();
@@ -139,16 +143,23 @@ bool ParticleGrid::isEmpty(uint x, uint y, uint z) {
 }
 
 void ParticleGrid::render(VkCommandBuffer cmd) {
-    /*if(particleCount == 0) return;
+    if(particleCount == 0) return;
     if(dirty) {
         meshGenLock.lock();
-        meshGenerator->generate(particleCount, particleBuffer->getHandle(), meshBuffer->getHandle());
+        meshGenerator->generate(particleCount, *particleBuffer, *meshBuffer);
+
+        void* ptr = meshBufferV->map();
+        cl::CommandQueue queue(ClEngine::getInstance()->getContext(), ClEngine::getInstance()->getDevice());
+        queue.enqueueReadBuffer(*meshBuffer, CL_TRUE, 0, (sizeof(float)*4*2)*6*(particleCount), ptr);
+        meshBufferV->unmap();
+
+        dirty = false;
         meshGenLock.unlock();
     }
 
     VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(cmd, 0, 1, &meshBuffer->getHandle(), offsets);
-    vkCmdDraw(cmd, particleCount*6, 1, 0, 0);*/
+    vkCmdBindVertexBuffers(cmd, 0, 1, &meshBufferV->getHandle(), offsets);
+    vkCmdDraw(cmd, particleCount*6, 1, 0, 0);
 }
 
 void ParticleGrid::simulate() {
@@ -177,7 +188,7 @@ void ParticleGrid::init(Camera& camera) {
         meshGenerator->createMeshGenerationShader();
         meshGenerator->createMeshGenerationInformation();
     });
-    /*pipelineCreatSync = std::async(std::launch::async, [&camera](){
+    pipelineCreatSync = std::async(std::launch::async, [&camera](){
         Shader vert = Shader(VK_SHADER_STAGE_VERTEX_BIT, "main");
         if(!vert.addCode("shaders/default/vertex.spv")) return;
         Shader frag = Shader(VK_SHADER_STAGE_FRAGMENT_BIT, "main");
@@ -197,24 +208,24 @@ void ParticleGrid::init(Camera& camera) {
             return Engine::getInstance()->allocate_descriptor_set(layout);
         })) return;
         pipeline->bindBufferToDescriptor(0, 0, camera.getBuffer().getHandle(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, sizeof(glm::mat4)*2);
-    });*/
+    });
 }
 
 void ParticleGrid::finalize() {
     delete simulator;
     delete meshGenerator;
-    //delete pipeline;
+    delete pipeline;
 }
 
 void ParticleGrid::waitInitComplete() {
     simInitSync.wait();
     meshInitSync.wait();
-    //pipelineCreatSync.wait();
+    pipelineCreatSync.wait();
 }
 
 void ParticleGrid::renderAll(VkCommandBuffer cmd) {
-    /*vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getHandle());
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getHandle());
 
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getLayout(), 0, 1, pipeline->getDescriptorSet(), 0, 0);
-    for(auto& grid : grids) grid->render(cmd);*/
+    for(auto& grid : grids) grid->render(cmd);
 }

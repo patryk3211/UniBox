@@ -21,6 +21,7 @@ set(SOURCES src/main.cpp
             src/simulator/particle_grid.cpp
             src/util/shader_assembler.cpp
             src/util/savefile.cpp
+            src/util/finalizer.cpp
             src/cl-engine/engine.cpp)
 
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -g)

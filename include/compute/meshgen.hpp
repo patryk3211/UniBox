@@ -1,25 +1,18 @@
 #pragma once
 
-#include <vk-engine/computepipeline.hpp>
-#include <vk-engine/commandbuffer.hpp>
-#include <vk-engine/buffer.hpp>
+#include <cl-engine/engine.hpp>
 
 namespace unibox {
     class MeshGenPipeline {
-        VkDevice device;
+        static cl::Buffer* pib; // Particle Info Buffer
+        static cl::Program* program;
 
-        ComputePipeline pipeline;
-        CommandBuffer* buffer;
-
-        Buffer* pib; // Particle Info Buffer
-
-        VkFence fence;
+        cl::Kernel kernel;
     public:
         MeshGenPipeline();
         ~MeshGenPipeline();
 
-        void generate(uint32_t particleCount, VkBuffer particleBuffer, VkBuffer meshBuffer);
-        bool isExecuting();
+        void generate(uint32_t particleCount, cl::Buffer& particleBuffer, cl::Buffer& meshBuffer);
 
         void createMeshGenerationInformation();
         void createMeshGenerationShader();

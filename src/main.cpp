@@ -14,6 +14,7 @@
 #include <util/savefile.hpp>
 #include <simulator/particle_grid.hpp>
 #include <cl-engine/engine.hpp>
+#include <util/finalizer.hpp>
 
 #include <chrono>
 #include <future>
@@ -25,6 +26,8 @@ using namespace unibox;
 
 int main(int argc, char** argv) {
     spdlog::info("Welcome to UniBox!");
+
+    Finalizer finalizer = Finalizer();
 
     ClEngine clEngine = ClEngine();
 
@@ -42,6 +45,10 @@ int main(int argc, char** argv) {
     //camera->perspective(90.0f, 1024.0f/720.0f);
     zoom = 70.0f;
     camera->setPosition(glm::vec3(60, 65, 0));
+
+    auto x = [camera](){
+        camera->setPosition(glm::vec3(0, 0, 0));
+    };
 
     /*GraphicsPipeline* default_pipeline;
     {
@@ -85,7 +92,7 @@ int main(int argc, char** argv) {
 
         Voxel voxel = {};
         voxel.type = 4;
-        voxel.position[1] = 16;
+        voxel.position[1] = 64;
         voxel.velocity[1] = -1;
 
         grid->addVoxel(voxel);
@@ -159,8 +166,8 @@ int main(int argc, char** argv) {
         }
 
         grid->simulate();
-        auto voxel = grid->getVoxel(0, 0, 0);
-        if(voxel.has_value()) spdlog::info(voxel.value()->data[0]);
+        /*auto voxel = grid->getVoxel(0, 0, 0);
+        if(voxel.has_value()) spdlog::info(voxel.value()->data[0]);*/
 
         glm::vec2 mouse = window.getCursorPos();
         mouse /= glm::vec2(1024/2.0, -720/2.0);
