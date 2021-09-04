@@ -20,7 +20,7 @@ using namespace unibox;
 int main(int argc, char** argv) {
     spdlog::info("Welcome to UniBox!");
 
-    Finalizer finalizer = Finalizer();
+    Finalizer* finalizer = new Finalizer();
 
     ClEngine clEngine = ClEngine();
 
@@ -161,6 +161,8 @@ int main(int argc, char** argv) {
 
     delete camera;
     delete grid;
+
+    delete finalizer;
 
     return 0;
 }
