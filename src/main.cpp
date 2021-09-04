@@ -84,11 +84,18 @@ int main(int argc, char** argv) {
         //std::vector<Voxel> particles;// = file.getParticles();
 
         Voxel voxel = {};
+        voxel.type = 4;
+        voxel.position[1] = 16;
+        voxel.velocity[1] = -1;
+
+        grid->addVoxel(voxel);
+
+        /*Voxel voxel = {};
         voxel.type = 1;
         /*voxel.stype = 1;
         voxel.data[1] = 0xFF000000;
         voxel.data[0] = 2;*/
-        voxel.data[0] = 0xFFFFFFFF;
+        /*voxel.data[0] = 0xFFFFFFFF;
         voxel.position[0] = 32;
         voxel.velocity[0] = 0;
         voxel.velocity[1] = 1;
@@ -152,7 +159,7 @@ int main(int argc, char** argv) {
         }
 
         grid->simulate();
-        auto voxel = grid->getVoxel(1, 8, 0);
+        auto voxel = grid->getVoxel(0, 0, 0);
         if(voxel.has_value()) spdlog::info(voxel.value()->data[0]);
 
         glm::vec2 mouse = window.getCursorPos();

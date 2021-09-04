@@ -56,14 +56,12 @@ uint ParticleGrid::allocateParticleIndex() {
 
         cl::CommandQueue queue(ClEngine::getInstance()->getContext(), ClEngine::getInstance()->getDevice());
 
-        this->particleBuffer = new cl::Buffer(ClEngine::getInstance()->getContext(), CL_MEM_READ_WRITE, sizeof(Voxel)*(particleCount+256));
+        this->particleBuffer = new cl::Buffer(ClEngine::getInstance()->getContext(), CL_MEM_READ_WRITE | CL_MEM_KERNEL_READ_AND_WRITE, sizeof(Voxel)*(particleCount+256));
         queue.enqueueUnmapMemObject(*oldBuffer, this->particles);
         queue.enqueueCopyBuffer(*oldBuffer, *this->particleBuffer, 0, 0, sizeof(Voxel)*particleCount);
         this->particles = (Voxel*)queue.enqueueMapBuffer(*this->particleBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Voxel)*(particleCount+256));
 
-        simLock.lock();
         delete oldBuffer;
-        simLock.unlock();
 
         for(int i = 0; i < 256; i++) freeIndices.push_back(i+base);
 
@@ -80,14 +78,17 @@ uint ParticleGrid::allocateParticleIndex() {
 }
 
 void ParticleGrid::addVoxel(const Voxel& voxel) {
+    simLock.lock();
     if(!isEmpty(static_cast<uint>(voxel.position[0]), static_cast<uint>(voxel.position[1]), static_cast<uint>(voxel.position[2]))) return;
     uint index = allocateParticleIndex();
     particles[index] = voxel;
     this->particleCount++;
     dirty = true;
+    simLock.unlock();
 }
 
 void ParticleGrid::addVoxels(int x, int y, int z, const std::vector<Voxel>& voxels) {
+    simLock.lock();
     for(int i = 0; i < voxels.size(); i++) {
         Voxel v = voxels[i];
         v.position[0] += x;
@@ -98,6 +99,7 @@ void ParticleGrid::addVoxels(int x, int y, int z, const std::vector<Voxel>& voxe
         this->particleCount++;
     }
     dirty = true;
+    simLock.unlock();
 }
 
 void ParticleGrid::eraseVoxel(uint x, uint y, uint z) {
@@ -152,7 +154,10 @@ void ParticleGrid::render(VkCommandBuffer cmd) {
 void ParticleGrid::simulate() {
     if(particleCount == 0) return;
     simLock.lock();
+    cl::CommandQueue queue(ClEngine::getInstance()->getContext(), ClEngine::getInstance()->getDevice());
+    queue.enqueueUnmapMemObject(*particleBuffer, particles);
     simulator->simulate(sizeX, sizeY, sizeZ, particleCount, gridBuffer, *particleBuffer);
+    queue.enqueueMapBuffer(*particleBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Voxel)*(particleCount/256+(particleCount%256==0?0:1)*256));
     dirty = true;
     simLock.unlock();
 }

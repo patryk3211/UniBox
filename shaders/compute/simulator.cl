@@ -25,8 +25,50 @@ typedef struct {
                  **/
 } ParticleInfo;
 
-__kernel void simulate(global Particle* particles, global GridPoint* grid, global ParticleInfo* particleInfo, uint sizeX, uint sizeY, uint sizeZ, uint particleCount, uint updatesPerSecond) {
+typedef struct {
+    global Particle* particles;
+    global GridPoint* grid;
+    constant ParticleInfo* particleInfo;
+
+    uint sizeX;
+    uint sizeY;
+    uint sizeZ;
+    uint particleCount;
+} SimulationStructures;
+
+// Utility functions
+uint calculatePosition(const SimulationStructures simStruct, uint x, uint y, uint z);
+bool checkBounds(const SimulationStructures simStruct, int x, int y, int z);
+uint getOffset(const SimulationStructures simStruct, uint x, uint y, uint z);
+bool isEmpty(const SimulationStructures simStruct, uint x, uint y, uint z);
+Particle getParticle(const SimulationStructures simStruct, uint x, uint y, uint z);
+ParticleInfo getParticleInfo(const SimulationStructures simStruct, Particle particle);
+
+#pragma PARTICLE_TYPES
+
+#pragma PARTICLE_CODE
+
+__kernel void simulate(global Particle* particles, global GridPoint* grid, constant ParticleInfo* particleInfo, uint sizeX, uint sizeY, uint sizeZ, uint particleCount, uint updatesPerSecond) {
     uint index = get_global_id(0);
+    if(index >= particleCount) return;
+
+    SimulationStructures structs;
+    structs.particles = particles;
+    structs.grid = grid;
+    structs.particleInfo = particleInfo;
+    structs.sizeX = sizeX;
+    structs.sizeY = sizeY;
+    structs.sizeZ = sizeZ;
+    structs.particleCount = particleCount;
+
+    Particle particle = particles[index];
+
+    switch(particle.type) {
+        #pragma PARTICLE_SWITCH
+        default: break;
+    }
+
+    particles[index] = particle;
 }
 
 __kernel void resetGrid(global GridPoint* grid, uint sizeX, uint sizeY, uint sizeZ) {
@@ -45,4 +87,29 @@ __kernel void buildGrid(global Particle* particles, global GridPoint* grid, uint
 
     uint vertexGridOffset = (uint)(particle.position[0])+(uint)(particle.position[1])*sizeX+(uint)(particle.position[2])*sizeX*sizeY;
     grid[vertexGridOffset].particleOffset = index+1;
+}
+
+// Utility functions
+uint calculatePosition(const SimulationStructures simStruct, uint x, uint y, uint z) {
+    return x + y*simStruct.sizeX + z*simStruct.sizeX*simStruct.sizeY;
+}
+
+bool checkBounds(const SimulationStructures simStruct, int x, int y, int z) {
+    return x >= 0 && x < simStruct.sizeX && y >= 0 && y < simStruct.sizeY && z >= 0 && z < simStruct.sizeZ;
+}
+
+uint getOffset(const SimulationStructures simStruct, uint x, uint y, uint z) {
+    return simStruct.grid[calculatePosition(simStruct, x, y, z)].particleOffset;
+}
+
+bool isEmpty(const SimulationStructures simStruct, uint x, uint y, uint z) {
+    return getOffset(simStruct, x, y, z) == 0;
+}
+
+Particle getParticle(const SimulationStructures simStruct, uint x, uint y, uint z) {
+    return simStruct.particles[getOffset(simStruct, x, y, z)-1];
+}
+
+ParticleInfo getParticleInfo(const SimulationStructures simStruct, Particle particle) {
+    return simStruct.particleInfo[(particle.type)-1];
 }

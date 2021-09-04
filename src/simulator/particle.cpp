@@ -298,7 +298,7 @@ std::string Particle::constructSwitchCode() {
         output.append(std::to_string(particle.second.typeId));
         output.append(": partFuncType");
         output.append(std::to_string(particle.second.typeId));
-        output.append("(vertex); break;\n");
+        output.append("(structs, &particle); break;\n");
     }
     return output;
 }
@@ -335,7 +335,7 @@ std::string Particle::constructFunctions() {
             }
         });
 
-        script.replace(script.find("void " + funcName + "(inout ArrayVertex ")+5, funcName.size(), "partFuncType" + std::to_string(particle.second.typeId));
+        script.replace(script.find("void " + funcName + "(const SimulationStructures ")+5, funcName.size(), "partFuncType" + std::to_string(particle.second.typeId));
         output.append(script);
         output.append("\n");
     }

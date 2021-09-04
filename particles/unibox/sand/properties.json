@@ -18,5 +18,5 @@
     "color": [ 255, 231, 71 ],
 
     "init": "init.lua",
-    "update": "update.glsl:update"
+    "update": "update.cl:update"
 }

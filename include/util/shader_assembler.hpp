@@ -19,6 +19,8 @@ namespace unibox {
         ~ShaderAssembler();
 
         void pragmaInsert(const std::string& pragmaName, const std::string& value);
+        void pragmaRemove(const std::string& pragmaName, const std::string& endPragmaName);
+        bool hasPragma(const std::string& pragmaName);
 
         std::vector<uint32_t>& compile(EShLanguage language);
         cl::Program* compile(const cl::Context& context, const cl::Device& device);

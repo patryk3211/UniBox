@@ -7,7 +7,5 @@
 
     "density": 8.96,
 
-    "color": [ 209, 86, 38 ],
-
-    "update": "update.glsl:update"
+    "color": [ 209, 86, 38 ]
 }

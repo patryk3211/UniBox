@@ -61,12 +61,13 @@ void Simulator::createSimulationInformation() {
     SimulationParticleInfoPacket pipPtr[particles.size()];
     for(int i = 0; i < particles.size(); i++) particles[i]->fillSimPip(pipPtr[i]);
 
-    pib = cl::Buffer(ClEngine::getInstance()->getContext(), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY, sizeof(SimulationParticleInfoPacket)*particles.size(), pipPtr);
+    pib = cl::Buffer(ClEngine::getInstance()->getContext(), CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR | CL_MEM_HOST_NO_ACCESS, sizeof(SimulationParticleInfoPacket)*particles.size(), pipPtr);
 }
 
 bool Simulator::createSimulationShader() {
     ShaderAssembler assembler = ShaderAssembler("shaders/compute/simulator.cl");
     assembler.pragmaInsert("PARTICLE_CODE", Particle::constructFunctions());
+    while(assembler.hasPragma("COMPILATION_REMOVE")) assembler.pragmaRemove("COMPILATION_REMOVE", "END_COMPILATION_REMOVE");
     assembler.pragmaInsert("PARTICLE_SWITCH", Particle::constructSwitchCode());
     assembler.pragmaInsert("PARTICLE_TYPES", Particle::constructTypeDefinitions());
     std::ofstream stream = std::ofstream("dump.comp", std::ios::binary);

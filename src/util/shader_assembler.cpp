@@ -31,6 +31,25 @@ void ShaderAssembler::pragmaInsert(const std::string& pragmaName, const std::str
     code.replace(pos, 8+pragmaName.length(), value);
 }
 
+void ShaderAssembler::pragmaRemove(const std::string& pragmaName, const std::string& endPragmaName) {
+	size_t start = code.find("#pragma " + pragmaName);
+	if(start == std::string::npos) {
+		spdlog::error("Could not find '#pragma " + pragmaName + "' in code.");
+		return;
+	}
+	size_t end = code.find("#pragma " + endPragmaName);
+	if(end == std::string::npos) {
+		spdlog::error("Could not find '#pragma " + endPragmaName + "' in code.");
+		return;
+	}
+	size_t length = end-start+8+endPragmaName.length();
+	code.erase(start, length);
+}
+
+bool ShaderAssembler::hasPragma(const std::string& pragmaName) {
+	return code.find("#pragma " + pragmaName) != std::string::npos;
+}
+
 std::vector<uint32_t>& ShaderAssembler::compile(EShLanguage language) {
     if(bytecode.size() != 0) return bytecode;
     
