@@ -34,9 +34,6 @@ namespace unibox {
 
         uint particleCount;
 
-        /*Buffer* particleBuffer;
-        Buffer* meshBuffer;
-        Buffer gridBuffer;*/
         cl::Buffer gridBuffer;
         cl::Buffer* particleBuffer;
         cl::Buffer* meshBuffer;
@@ -60,7 +57,6 @@ namespace unibox {
         void simulate();
 
         static void init(Camera& camera);
-        static void finalize();
         static void waitInitComplete();
 
         static void renderAll(VkCommandBuffer cmd);

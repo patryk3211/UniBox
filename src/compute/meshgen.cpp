@@ -1,6 +1,5 @@
 #include <compute/meshgen.hpp>
 
-#include <vk-engine/engine.hpp>
 #include <simulator/voxel.hpp>
 #include <simulator/particle.hpp>
 #include <util/shader_assembler.hpp>

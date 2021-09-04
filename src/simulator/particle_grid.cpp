@@ -4,6 +4,7 @@
 #include <glslang/Public/ShaderLang.h>
 #include <vk-engine/engine.hpp>
 #include <glm/mat4x4.hpp>
+#include <util/finalizer.hpp>
 
 using namespace unibox;
 
@@ -178,15 +179,18 @@ void ParticleGrid::init(Camera& camera) {
         spdlog::error("Could not initialize glslang.");
         return;
     }
+    Finalizer::addCallback([](){ glslang::FinalizeProcess(); });
     simInitSync = std::async(std::launch::async, [](){
         simulator = new Simulator();
         simulator->createSimulationShader();
         simulator->createSimulationInformation();
+        Finalizer::addCallback([](){ delete simulator; });
     });
     meshInitSync = std::async(std::launch::async, [](){
         meshGenerator = new MeshGenPipeline();
         meshGenerator->createMeshGenerationShader();
         meshGenerator->createMeshGenerationInformation();
+        Finalizer::addCallback([](){ delete meshGenerator; });
     });
     pipelineCreatSync = std::async(std::launch::async, [&camera](){
         Shader vert = Shader(VK_SHADER_STAGE_VERTEX_BIT, "main");
@@ -208,13 +212,8 @@ void ParticleGrid::init(Camera& camera) {
             return Engine::getInstance()->allocate_descriptor_set(layout);
         })) return;
         pipeline->bindBufferToDescriptor(0, 0, camera.getBuffer().getHandle(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, sizeof(glm::mat4)*2);
+        Finalizer::addCallback([](){ delete pipeline; });
     });
-}
-
-void ParticleGrid::finalize() {
-    delete simulator;
-    delete meshGenerator;
-    delete pipeline;
 }
 
 void ParticleGrid::waitInitComplete() {

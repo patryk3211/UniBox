@@ -1,6 +1,5 @@
 #include <compute/simulator.hpp>
 
-#include <vk-engine/engine.hpp>
 #include <simulator/voxel.hpp>
 #include <util/shader_assembler.hpp>
 #include <simulator/particle.hpp>
@@ -62,6 +61,7 @@ void Simulator::createSimulationInformation() {
     for(int i = 0; i < particles.size(); i++) particles[i]->fillSimPip(pipPtr[i]);
 
     pib = cl::Buffer(ClEngine::getInstance()->getContext(), CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR | CL_MEM_HOST_NO_ACCESS, sizeof(SimulationParticleInfoPacket)*particles.size(), pipPtr);
+    simKernel.setArg(2, pib);
 }
 
 bool Simulator::createSimulationShader() {
@@ -77,8 +77,6 @@ bool Simulator::createSimulationShader() {
     if(program == 0) return false;
 
     simKernel = cl::Kernel(*program, "simulate");
-    simKernel.setArg(2, pib);
-
     resetKernel = cl::Kernel(*program, "resetGrid");
     buildKernel = cl::Kernel(*program, "buildGrid");
     return true;

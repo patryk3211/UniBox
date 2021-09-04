@@ -70,9 +70,6 @@ std::vector<uint32_t>& ShaderAssembler::compile(EShLanguage language) {
 
     TBuiltInResource resources = getResources();
 
-    //std::string str;
-    //if(!shader.preprocess(&resources, version, EProfile::ENoProfile, false, false, messages, &str,))
-
     if(!shader.parse(&resources, version, true, messages)) {
         spdlog::info(shader.getInfoLog());
         spdlog::info(shader.getInfoDebugLog());
