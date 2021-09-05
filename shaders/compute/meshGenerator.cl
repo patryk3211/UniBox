@@ -19,10 +19,6 @@ typedef struct {
     float4 materialColor;
 } ParticleInfo;
 
-float3 blend(float3 a, float3 b, float blendAmount) {
-    return a*(1.0f-blendAmount)+b*blendAmount;
-}
-
 #pragma PARTICLE_TYPES
 
 #pragma PARTICLE_CODE
@@ -42,7 +38,7 @@ __kernel void generate(global Particle* particles, global Vertex* output, consta
         }
         w = 1.0;
         for(int i = 0; i < 6; i++) 
-            output[index*6+i].color = (float4)(blend(
+            output[index*6+i].color = (float4)(mix(
                     baseColor.xyz,
                     (float3)(particle.paintColor[0], particle.paintColor[1], particle.paintColor[2]),
                     particle.paintColor[3]),

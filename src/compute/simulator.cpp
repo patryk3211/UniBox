@@ -93,7 +93,7 @@ bool Simulator::createSimulationShader() {
     while(assembler.hasPragma("COMPILATION_REMOVE")) assembler.pragmaRemove("COMPILATION_REMOVE", "END_COMPILATION_REMOVE");
     assembler.pragmaInsert("PARTICLE_SWITCH", Particle::constructSwitchCode());
     assembler.pragmaInsert("PARTICLE_TYPES", Particle::constructTypeDefinitions());
-    std::ofstream stream = std::ofstream("dump.comp", std::ios::binary);
+    std::ofstream stream = std::ofstream("simDump.cl", std::ios::binary);
     assembler.dump(stream);
 
     program = assembler.compile(ClEngine::getInstance()->getContext(), ClEngine::getInstance()->getDevice());

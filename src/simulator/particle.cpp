@@ -352,9 +352,9 @@ std::string Particle::constructMeshSwitchCode() {
         if(!particle.second.drawScript.has_value()) continue;
         output.append("case ");
         output.append(std::to_string(particle.second.typeId));
-        output.append(": baseColor = partFuncType");
+        output.append(": baseColor = (float4)(partFuncType");
         output.append(std::to_string(particle.second.typeId));
-        output.append("(baseColor, inVert); break;\n");
+        output.append("(baseColor.xyz, particle), baseColor.w); break;\n");
     }
     return output;
 }
@@ -389,7 +389,7 @@ std::string Particle::constructMeshFunctions() {
             }
         });
 
-        script.replace(script.find("vec3 " + funcName + "(vec3 ")+5, funcName.size(), "partFuncType" + std::to_string(particle.second.typeId));
+        script.replace(script.find("float3 " + funcName + "(float3 ")+7, funcName.size(), "partFuncType" + std::to_string(particle.second.typeId));
         output.append(script);
         output.append("\n");
     }

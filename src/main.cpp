@@ -58,14 +58,14 @@ int main(int argc, char** argv) {
         voxel.velocity[1] = 1;
         grid->addVoxel(voxel);
 
-        /*voxel.type = 2;
+        voxel.type = 2;
         voxel.data[0] = 0;
         voxel.position[0] = 0;
         voxel.position[1] = 8;
         for(int i = 0; i < 64; i++) {
             voxel.position[0]++;
             grid->addVoxel(voxel);
-        }*/
+        }
 
         /*voxel.data[1] = 0x00000000;
         voxel.data[0] = 0;
