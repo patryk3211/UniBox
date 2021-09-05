@@ -38,20 +38,17 @@ bool checkNeighbour(Particle* vertex, const Particle neighbour) {
         case UNIBOX_OPTICAL_FIBER:
             if(neighbour.data[0] == 2) {
                 if(vertex->data[0] == 0) {
-                    vertex->data[1] = (uint)(neighbour.data[1]);
+                    vertex->data[1] = neighbour.data[1];
                     vertex->data[0] = 2;
-                    return true;
-                } else {
-                    vertex->data[1] = (uint)(vertex->data[1]/2)+(uint)(neighbour.data[1]/2);
-                    return true;
-                }
+                } else vertex->data[1] = (uint)(vertex->data[1]/2)+(uint)(neighbour.data[1]/2);
+                return true;
             }
             break;
         case UNIBOX_PHOTON: {
-            const uint divider = (uint)(1/(neighbour.data[0]/4));
-            const uint divider2 = (uint)(1/(1.0-(neighbour.data[0]/4)));
-            vertex->data[1] = (uint)(vertex->data[1]/divider)+(uint)(neighbour.data[0]/divider2);
-            if(vertex->data[0] == 0) vertex->data[0] = 2;
+            if(vertex->data[0] == 0) {
+                vertex->data[1] = neighbour.data[0];
+                vertex->data[0] = 2;
+            } else vertex->data[1] = (uint)(vertex->data[1]/2)+(uint)(neighbour.data[0]/2);
             return true;
         }
     }
