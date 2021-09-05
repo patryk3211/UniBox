@@ -59,10 +59,15 @@ uint ParticleGrid::allocateParticleIndex() {
 
         cl::CommandQueue queue(ClEngine::getInstance()->getContext(), ClEngine::getInstance()->getDevice());
 
-        this->particleBuffer = new cl::Buffer(ClEngine::getInstance()->getContext(), CL_MEM_READ_WRITE | CL_MEM_KERNEL_READ_AND_WRITE, sizeof(Voxel)*(particleCount+256));
+        this->particleBuffer = new cl::Buffer(ClEngine::getInstance()->getContext(), CL_MEM_READ_WRITE, sizeof(Voxel)*(particleCount+256));
         queue.enqueueUnmapMemObject(*oldBuffer, this->particles);
         queue.enqueueCopyBuffer(*oldBuffer, *this->particleBuffer, 0, 0, sizeof(Voxel)*particleCount);
-        this->particles = (Voxel*)queue.enqueueMapBuffer(*this->particleBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Voxel)*(particleCount+256));
+        cl_int error;
+        this->particles = (Voxel*)queue.enqueueMapBuffer(*this->particleBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Voxel)*(particleCount+256), 0, 0, &error);
+        if(error != CL_SUCCESS) {
+            spdlog::error("OpenCL particle buffer mapping error: " + std::to_string(error));
+            return -1;
+        }
 
         delete oldBuffer;
 
@@ -167,7 +172,7 @@ void ParticleGrid::simulate() {
     cl::CommandQueue queue(ClEngine::getInstance()->getContext(), ClEngine::getInstance()->getDevice());
     queue.enqueueUnmapMemObject(*particleBuffer, particles);
     simulator->simulate(sizeX, sizeY, sizeZ, particleCount, gridBuffer, *particleBuffer);
-    queue.enqueueMapBuffer(*particleBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Voxel)*(particleCount/256+(particleCount%256==0?0:1)*256));
+    queue.enqueueMapBuffer(*particleBuffer, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, 0, sizeof(Voxel)*(particleCount/256+(particleCount%256==0?0:1))*256);
     dirty = true;
 }
 
