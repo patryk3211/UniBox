@@ -1,0 +1,13 @@
+{
+    "displayName": "Spark",
+    "description": "A particle of pure electricity.\nCan be used to activate some devices.",
+
+    "state": "solid",
+    "gravity": false,
+
+    "density": 1,
+
+    "color": [ 255, 252, 74 ],
+
+    "update": "update.cl:update"
+}

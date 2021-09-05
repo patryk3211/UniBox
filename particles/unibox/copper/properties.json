@@ -7,5 +7,7 @@
 
     "density": 8.96,
 
-    "color": [ 209, 86, 38 ]
+    "color": [ 209, 86, 38 ],
+
+    "update": "update.cl:update"
 }

@@ -49,19 +49,14 @@ int main(int argc, char** argv) {
 
     spdlog::info("Random gen start");
     {
-
         Voxel voxel = {};
         voxel.type = 1;
-        voxel.data[0] = 0xFFFFFFFF;
-        voxel.position[0] = 32;
-        voxel.velocity[0] = 0;
-        voxel.velocity[1] = 1;
+        voxel.data[0] = 2;
+        voxel.position[1] = 16;
         grid->addVoxel(voxel);
 
-        voxel.type = 2;
         voxel.data[0] = 0;
-        voxel.position[0] = 0;
-        voxel.position[1] = 8;
+        voxel.type = 4;
         for(int i = 0; i < 64; i++) {
             voxel.position[0]++;
             grid->addVoxel(voxel);
