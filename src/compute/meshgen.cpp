@@ -37,9 +37,25 @@ void MeshGenPipeline::generate(uint32_t particleCount, cl::Buffer& particleBuffe
     kernel.setArg(1, meshBuffer);
     kernel.setArg(3, particleCount);
 
-    cl::CommandQueue queue(ClEngine::getInstance()->getContext(), ClEngine::getInstance()->getDevice());
-    queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(particleCount));
-    queue.enqueueMarkerWithWaitList();
+    cl_int error;
+    cl::CommandQueue queue(ClEngine::getInstance()->getContext(), ClEngine::getInstance()->getDevice(), 0, &error);
+    if(error != CL_SUCCESS) {
+        spdlog::error("OpenCL Mesh Generator command queue creation failure: " + std::to_string(error));
+        return;
+    }
+    error = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(particleCount));
+    if(error != CL_SUCCESS) {
+        spdlog::error("OpenCL Mesh Gen Error: " + std::to_string(error));
+        return;
+    }
+
+    queue.flush();
+
+    error = queue.finish();
+    if(error != CL_SUCCESS) {
+        spdlog::error("OpenCL Mesh Gen Finish Error: " + std::to_string(error));
+        return;
+    }
 }
 
 void MeshGenPipeline::createMeshGenerationInformation() {

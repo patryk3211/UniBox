@@ -107,7 +107,13 @@ bool isEmpty(const SimulationStructures simStruct, uint x, uint y, uint z) {
 }
 
 Particle getParticle(const SimulationStructures simStruct, uint x, uint y, uint z) {
-    return simStruct.particles[getOffset(simStruct, x, y, z)-1];
+    uint offset = getOffset(simStruct, x, y, z);
+    if(offset == 0) {
+        Particle part;
+        part.type = 0;
+        return part;
+    }
+    return simStruct.particles[offset-1];
 }
 
 ParticleInfo getParticleInfo(const SimulationStructures simStruct, Particle particle) {

@@ -26,13 +26,23 @@ Simulator::~Simulator() {
 }
 
 void Simulator::simulate(uint32_t sizeX, uint32_t sizeY, uint32_t sizeZ, uint32_t particleCount, cl::Buffer gridBuffer, cl::Buffer particleBuffer) {
-    cl::CommandQueue queue(ClEngine::getInstance()->getContext(), ClEngine::getInstance()->getDevice());
+    cl_int error;
+    cl::CommandQueue queue = cl::CommandQueue(ClEngine::getInstance()->getContext(), ClEngine::getInstance()->getDevice(), 0, &error);
+    if(error != CL_SUCCESS) {
+        spdlog::error("OpenCL Simulator Command Queue creation failure: " + std::to_string(error));
+        return;
+    }
 
     resetKernel.setArg(0, gridBuffer);
     resetKernel.setArg(1, sizeX);
     resetKernel.setArg(2, sizeY);
     resetKernel.setArg(3, sizeZ);
-    queue.enqueueNDRangeKernel(resetKernel, cl::NullRange, cl::NDRange(sizeX*sizeY*sizeZ));
+    std::vector<cl::Event> resetEvent = { cl::Event() };
+    error = queue.enqueueNDRangeKernel(resetKernel, cl::NullRange, cl::NDRange(sizeX*sizeY*sizeZ), cl::NullRange, 0, &resetEvent[0]);
+    if(error != CL_SUCCESS) {
+        spdlog::error("OpenCL Grid Reset Error: " + std::to_string(error));
+        return;
+    }
 
     buildKernel.setArg(0, particleBuffer);
     buildKernel.setArg(1, gridBuffer);
@@ -40,7 +50,12 @@ void Simulator::simulate(uint32_t sizeX, uint32_t sizeY, uint32_t sizeZ, uint32_
     buildKernel.setArg(3, sizeY);
     buildKernel.setArg(4, sizeZ);
     buildKernel.setArg(5, particleCount);
-    queue.enqueueNDRangeKernel(buildKernel, cl::NullRange, cl::NDRange(particleCount));
+    std::vector<cl::Event> buildEvent = { cl::Event() };
+    error = queue.enqueueNDRangeKernel(buildKernel, cl::NullRange, cl::NDRange(particleCount), cl::NullRange, &resetEvent, &buildEvent[0]);
+    if(error != CL_SUCCESS) {
+        spdlog::error("OpenCL Grid Build Error: " + std::to_string(error));
+        return;
+    }
 
     simKernel.setArg(0, particleBuffer);
     simKernel.setArg(1, gridBuffer);
@@ -49,9 +64,17 @@ void Simulator::simulate(uint32_t sizeX, uint32_t sizeY, uint32_t sizeZ, uint32_
     simKernel.setArg(5, sizeZ);
     simKernel.setArg(6, particleCount);
     simKernel.setArg(7, 60);
-    queue.enqueueNDRangeKernel(simKernel, cl::NullRange, cl::NDRange(particleCount));
+    error = queue.enqueueNDRangeKernel(simKernel, cl::NullRange, cl::NDRange(particleCount), cl::NullRange, &buildEvent, 0);
+    if(error != CL_SUCCESS) {
+        spdlog::error("OpenCL Simulate Error: " + std::to_string(error));
+        return;
+    }
 
-    queue.enqueueMarkerWithWaitList();
+    error = queue.finish();
+    if(error != CL_SUCCESS) {
+        spdlog::error("OpenCL Simulator finish error: " + std::to_string(error));
+        return;
+    }
 }
 
 void Simulator::createSimulationInformation() {

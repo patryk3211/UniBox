@@ -14,7 +14,7 @@ ClEngine::ClEngine() {
 
     for(auto& platform : platforms) {
         std::vector<cl::Device> devices;
-        platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
+        platform.getDevices(CL_DEVICE_TYPE_GPU, &devices);
         for(auto& device : devices) {
             // Select the first available device.
             this->device = device;
