@@ -37,10 +37,14 @@ bool checkNeighbour(Particle* vertex, const Particle neighbour) {
     switch(neighbour.type) {
         case UNIBOX_OPTICAL_FIBER:
             if(neighbour.data[0] == 2) {
-                // TODO: [31.07.2021] Blend the color into the current color.
-                vertex->data[0] = 2;
-                vertex->data[1] = neighbour.data[1];
-                return true;
+                if(vertex->data[0] == 0) {
+                    vertex->data[1] = (uint)(neighbour.data[1]);
+                    vertex->data[0] = 2;
+                    return true;
+                } else {
+                    vertex->data[1] = (uint)(vertex->data[1]/2)+(uint)(neighbour.data[1]/2);
+                    return true;
+                }
             }
             break;
         case UNIBOX_PHOTON: {
@@ -58,17 +62,10 @@ void update(const SimulationStructures structs, Particle* vertex) {
     // Since it's a compute shader, it's better for the fiber to "pull" the light in rather than pushing it out.
     if(vertex->data[0] == 0) {
         // TODO: [31.07.2021] Add light velocity so that in case of an intersection it prefers to go a certain way.
-        Particle neighbour = getParticle(structs, (uint)vertex->position[0]-1, (uint)vertex->position[1], (uint)vertex->position[2]);
-        if(checkNeighbour(vertex, neighbour)) return;
-
-        neighbour = getParticle(structs, (uint)vertex->position[0]+1, (uint)vertex->position[1], (uint)vertex->position[2]);
-        if(checkNeighbour(vertex, neighbour)) return;
-
-        neighbour = getParticle(structs, (uint)vertex->position[0], (uint)vertex->position[1]-1, (uint)vertex->position[2]);
-        if(checkNeighbour(vertex, neighbour)) return;
-
-        neighbour = getParticle(structs, (uint)vertex->position[0], (uint)vertex->position[1]+1, (uint)vertex->position[2]);
-        if(checkNeighbour(vertex, neighbour)) return;
+        checkNeighbour(vertex, getParticle(structs, (uint)vertex->position[0]-1, (uint)vertex->position[1], (uint)vertex->position[2]));
+        checkNeighbour(vertex, getParticle(structs, (uint)vertex->position[0]+1, (uint)vertex->position[1], (uint)vertex->position[2]));
+        checkNeighbour(vertex, getParticle(structs, (uint)vertex->position[0], (uint)vertex->position[1]-1, (uint)vertex->position[2]));
+        checkNeighbour(vertex, getParticle(structs, (uint)vertex->position[0], (uint)vertex->position[1]+1, (uint)vertex->position[2]));
     } else {
         vertex->data[0]--;
     }
