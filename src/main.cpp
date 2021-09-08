@@ -50,17 +50,25 @@ int main(int argc, char** argv) {
     spdlog::info("Random gen start");
     {
         Voxel voxel = {};
-        voxel.type = 1;
-        voxel.data[0] = 2;
-        voxel.position[1] = 16;
-        grid->addVoxel(voxel);
+        voxel.type = 4;
+        //voxel.data[0] = 2;
+        //voxel.data[1] = 0xFFFFFFFF;
+        voxel.position[1] = 32;
+        //grid->addVoxel(voxel);
 
         voxel.data[0] = 0;
-        voxel.type = 4;
+        voxel.data[1] = 0;
         for(int i = 0; i < 64; i++) {
             voxel.position[0]++;
             grid->addVoxel(voxel);
         }
+
+        voxel.type = 3;
+        voxel.position[0] = 32;
+        voxel.position[1] = 0;
+        voxel.data[0] = 0xFFFFFFFF;
+        voxel.velocity[1] = 1;
+        grid->addVoxel(voxel);
 
         /*voxel.data[1] = 0x00000000;
         voxel.data[0] = 0;
@@ -110,7 +118,7 @@ int main(int argc, char** argv) {
             spdlog::info(std::to_string(1.0/(dur.count()/60000000.0)) + " FPS");
         }
 
-        grid->simulate();
+        if(f == 0 || f==15 || f == 30 || f == 45)grid->simulate();
 
         glm::vec2 mouse = window.getCursorPos();
         mouse /= glm::vec2(1024/2.0, -720/2.0);

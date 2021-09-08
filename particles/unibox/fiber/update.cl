@@ -33,36 +33,44 @@ typedef struct {
 
 #pragma END_COMPILATION_REMOVE
 
-bool checkNeighbour(Particle* vertex, const Particle neighbour) {
+void checkNeighbour(Particle* vertex, const Particle neighbour, uint* mixedValue, bool* received) {
     switch(neighbour.type) {
-        case UNIBOX_OPTICAL_FIBER:
+        case UNIBOX_OPTICAL_FIBER: {
             if(neighbour.data[0] == 2) {
-                if(vertex->data[0] == 0) {
-                    vertex->data[1] = neighbour.data[1];
-                    vertex->data[0] = 2;
-                } else vertex->data[1] = (uint)(vertex->data[1]/2)+(uint)(neighbour.data[1]/2);
-                return true;
+                *mixedValue |= neighbour.data[1];
+                *received = true;
             }
             break;
-        case UNIBOX_PHOTON: {
-            if(vertex->data[0] == 0) {
-                vertex->data[1] = neighbour.data[0];
-                vertex->data[0] = 2;
-            } else vertex->data[1] = (uint)(vertex->data[1]/2)+(uint)(neighbour.data[0]/2);
-            return true;
+        } case UNIBOX_PHOTON: {
+            *mixedValue |= neighbour.data[0];
+            *received = true;
+            vertex->data[2] = 1;
+            break;
+        } case UNIBOX_FILTER: {
+            if(neighbour.data[0] == 2) {
+                *mixedValue |= neighbour.data[1];
+                *received = true;
+            }
+            break;
         }
     }
-    return false;
 }
 
 void update(const SimulationStructures structs, Particle* vertex) {
     // Since it's a compute shader, it's better for the fiber to "pull" the light in rather than pushing it out.
     if(vertex->data[0] == 0) {
         // TODO: [31.07.2021] Add light velocity so that in case of an intersection it prefers to go a certain way.
-        checkNeighbour(vertex, getParticle(structs, (uint)vertex->position[0]-1, (uint)vertex->position[1], (uint)vertex->position[2]));
-        checkNeighbour(vertex, getParticle(structs, (uint)vertex->position[0]+1, (uint)vertex->position[1], (uint)vertex->position[2]));
-        checkNeighbour(vertex, getParticle(structs, (uint)vertex->position[0], (uint)vertex->position[1]-1, (uint)vertex->position[2]));
-        checkNeighbour(vertex, getParticle(structs, (uint)vertex->position[0], (uint)vertex->position[1]+1, (uint)vertex->position[2]));
+        uint mixedValue = 0;
+        bool received = false;
+        checkNeighbour(vertex, getParticle(structs, (uint)vertex->position[0]-1, (uint)vertex->position[1], (uint)vertex->position[2]), &mixedValue, &received);
+        checkNeighbour(vertex, getParticle(structs, (uint)vertex->position[0]+1, (uint)vertex->position[1], (uint)vertex->position[2]), &mixedValue, &received);
+        checkNeighbour(vertex, getParticle(structs, (uint)vertex->position[0], (uint)vertex->position[1]-1, (uint)vertex->position[2]), &mixedValue, &received);
+        checkNeighbour(vertex, getParticle(structs, (uint)vertex->position[0], (uint)vertex->position[1]+1, (uint)vertex->position[2]), &mixedValue, &received);
+
+        if(received) {
+            vertex->data[0] = 2;
+            vertex->data[1] = mixedValue;
+        }
     } else {
         vertex->data[0]--;
     }

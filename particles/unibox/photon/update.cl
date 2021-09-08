@@ -34,6 +34,12 @@ typedef struct {
 #pragma END_COMPILATION_REMOVE
 
 void update(const SimulationStructures structs, Particle* vertex) {
+    if((vertex->state&0x01)!=0) {
+        vertex->type = 0;
+        vertex->state = 0;
+        return;
+    }
+
     const float xStart = vertex->position[0];
     const float yStart = vertex->position[1];
     const float zStart = vertex->position[2];
@@ -83,10 +89,5 @@ void update(const SimulationStructures structs, Particle* vertex) {
             vertex->velocity[1] = -vertex->velocity[1];
             vertex->velocity[2] = -vertex->velocity[2];
         }
-    }
-
-    if((vertex->state&0x01)!=0) {
-        vertex->type = 0;
-        vertex->state = 0;
     }
 }
