@@ -9,5 +9,5 @@
 
     "color": [ 255, 252, 74 ],
 
-    "update": "update.cl:update"
+    "update": "update.cl:unibox_spark_update"
 }

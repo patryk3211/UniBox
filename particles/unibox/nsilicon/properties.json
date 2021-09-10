@@ -1,0 +1,13 @@
+{
+    "displayName": "N Type Silicon",
+    "description": "N type silicon can be used to create transistors which conduct if their gate is sparked.",
+
+    "state": "solid",
+    "gravity": true,
+
+    "density": 2.33,
+
+    "color": [ 42, 74, 115 ],
+
+    "update": "conductorUpdate"
+}

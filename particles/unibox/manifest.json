@@ -24,6 +24,28 @@
         {
             "name": "spark",
             "location": "spark"
+        },
+        {
+            "name": "filter",
+            "location": "filter"
+        },
+        {
+            "name": "gate",
+            "location": "gate"
+        },
+        {
+            "name": "psilicon",
+            "location": "psilicon"
+        },
+        {
+            "name": "nsilicon",
+            "location": "nsilicon"
         }
-    ]
+    ],
+    "include": {
+        "update": [
+            "scripts/light.cl",
+            "scripts/spark.cl"
+        ]
+    }
 }

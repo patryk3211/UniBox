@@ -21,6 +21,8 @@ typedef struct {
 
 #pragma PARTICLE_TYPES
 
+#pragma INCLUDE_CODE
+
 #pragma PARTICLE_CODE
 
 __kernel void generate(global Particle* particles, global Vertex* output, constant ParticleInfo* particleInfo, uint particleCount) {

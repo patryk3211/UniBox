@@ -1,0 +1,13 @@
+{
+    "displayName": "Filter",
+    "description": "Used to manipulate the wavelengths of light.",
+
+    "state": "solid",
+    "gravity": false,
+
+    "density": 3,
+
+    "color": [ 64, 64, 64 ],
+
+    "update": "update.cl:unibox_filter_update"
+}

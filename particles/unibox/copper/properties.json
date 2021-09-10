@@ -9,5 +9,5 @@
 
     "color": [ 209, 86, 38 ],
 
-    "update": "update.cl:update"
+    "update": "conductorUpdate"
 }

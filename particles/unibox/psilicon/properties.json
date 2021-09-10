@@ -1,0 +1,13 @@
+{
+    "displayName": "P Type Silicon",
+    "description": "P type silicon can be used to create transistors which conduct if their gate is NOT sparked.",
+
+    "state": "solid",
+    "gravity": true,
+
+    "density": 2.33,
+
+    "color": [ 168, 80, 74 ],
+
+    "update": "update.cl:unibox_psilicon_update"
+}

@@ -9,5 +9,6 @@
 
     "color": [ 255, 255, 255 ],
     
-    "update": "update.cl:update"
+    "update": "update.cl:unibox_photon_update",
+    "draw": "draw.cl:unibox_photon_draw"
 }

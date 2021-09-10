@@ -51,51 +51,54 @@ int main(int argc, char** argv) {
     {
         Voxel voxel = {};
         voxel.type = 4;
-        //voxel.data[0] = 2;
-        //voxel.data[1] = 0xFFFFFFFF;
-        voxel.position[1] = 32;
-        //grid->addVoxel(voxel);
-
-        voxel.data[0] = 0;
-        voxel.data[1] = 0;
-        for(int i = 0; i < 64; i++) {
-            voxel.position[0]++;
-            grid->addVoxel(voxel);
-        }
-
-        voxel.type = 3;
-        voxel.position[0] = 32;
+        voxel.stype = 8;
+        voxel.data[0] = 2;
+        voxel.position[0] = 0;
         voxel.position[1] = 0;
-        voxel.data[0] = 0xFFFFFFFF;
-        voxel.velocity[1] = 1;
         grid->addVoxel(voxel);
-
-        /*voxel.data[1] = 0x00000000;
+        voxel.position[1]++;
+        voxel.type = 8;
         voxel.data[0] = 0;
 
-        for(int i = 0; i < 32; i++) {
-            voxel.position[0]++;
+        for(int i = 0; i < 8; i++) {
             grid->addVoxel(voxel);
-        }
-
-        for(int i = 0; i < 32; i++) {
             voxel.position[1]++;
-            grid->addVoxel(voxel);
         }
 
-        for(int i = 0; i < 32; i++) {
-            voxel.position[0]--;
+        voxel.type = 7;
+        grid->addVoxel(voxel);
+        voxel.position[1]++;
+        voxel.type = 1;
+        grid->addVoxel(voxel);
+        voxel.position[0]++;
+        grid->addVoxel(voxel);
+        voxel.position[0]--;
+        voxel.position[1]++;
+        voxel.type = 7;
+        grid->addVoxel(voxel);
+        voxel.position[1]++;
+
+        voxel.type = 8;
+        for(int i = 0; i < 8; i++) {
             grid->addVoxel(voxel);
+            voxel.position[1]++;
         }
 
-        for(int i = 0; i < 30; i++) {
-            voxel.position[1]--;
+        voxel.position[0] = 2;
+        voxel.position[1] = 3;
+        voxel.type = 4;
+        voxel.stype = 8;
+        voxel.data[0] = 2;
+        grid->addVoxel(voxel);
+        voxel.position[1]++;
+        voxel.type = 8;
+        voxel.data[0] = 0;
+
+        for(int i = 0; i < 7; i++) {
             grid->addVoxel(voxel);
+            voxel.position[1]++;
         }
 
-        voxel.position[1]--;
-        voxel.data[0] = 1;
-        grid->addVoxel(voxel);*/
         /*SaveFile file = SaveFile("saves/test.ubs");
         file.readParticles();
         grid->addVoxels(0, 0, 0, file.getParticles());*/

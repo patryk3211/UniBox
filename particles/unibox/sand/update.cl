@@ -32,7 +32,7 @@ typedef struct {
 } SimulationStructures;
 #pragma END_COMPILATION_REMOVE
 
-void update(const SimulationStructures structs, Particle* vertex) {
+void unibox_sand_update(const SimulationStructures structs, Particle* vertex) {
     const float xStart = vertex->position[0];
     const float yStart = vertex->position[1];
     const float zStart = vertex->position[2];

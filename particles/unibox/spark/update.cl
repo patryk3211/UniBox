@@ -33,7 +33,7 @@ typedef struct {
 
 #pragma END_COMPILATION_REMOVE
 
-void update(const SimulationStructures structs, Particle* vertex) {
+void unibox_spark_update(const SimulationStructures structs, Particle* vertex) {
     if(vertex->data[0] == 0) {
         vertex->type = vertex->stype;
         vertex->stype = 0;

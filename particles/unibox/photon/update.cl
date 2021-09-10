@@ -33,7 +33,7 @@ typedef struct {
 
 #pragma END_COMPILATION_REMOVE
 
-void update(const SimulationStructures structs, Particle* vertex) {
+void unibox_photon_update(const SimulationStructures structs, Particle* vertex) {
     if((vertex->state&0x01)!=0) {
         vertex->type = 0;
         vertex->state = 0;

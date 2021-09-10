@@ -46,6 +46,8 @@ ParticleInfo getParticleInfo(const SimulationStructures simStruct, Particle part
 
 #pragma PARTICLE_TYPES
 
+#pragma INCLUDE_CODE
+
 #pragma PARTICLE_CODE
 
 __kernel void simulate(global Particle* particles, global GridPoint* grid, constant ParticleInfo* particleInfo, uint sizeX, uint sizeY, uint sizeZ, uint particleCount, uint updatesPerSecond) {

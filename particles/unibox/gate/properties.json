@@ -1,0 +1,14 @@
+{
+    "displayName": "Silicon Gate",
+    "description": "A simple silicon gate that can be used to build transistors.",
+
+    "state": "solid",
+    "gravity": false,
+
+    "density": 2.33,
+
+    "color": [ 75, 77, 94 ],
+
+    "update": "update.cl:unibox_gate_update",
+    "draw": "draw.cl:unibox_gate_draw"
+}

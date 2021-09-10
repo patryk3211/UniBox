@@ -63,6 +63,8 @@ namespace unibox {
         static std::unordered_map<std::string, std::list<Particle**>> deferredPointers;
         static std::vector<Particle*> particlesIdArray;
 
+        static std::string updateInclude, drawInclude;
+
         ushort typeId;
 
         std::string displayName;
@@ -78,6 +80,7 @@ namespace unibox {
         Particle(const std::string& particleDir);
 
         static void getParticlePtr(const std::string& name, Particle** particle);
+        static std::string readFile(const std::string& filepath);
     public:
         Particle();
         ~Particle();
@@ -99,9 +102,11 @@ namespace unibox {
 
         static std::string constructSwitchCode();
         static std::string constructFunctions();
+        static std::string& getIncludeCode();
 
         static std::string constructMeshSwitchCode();
         static std::string constructMeshFunctions();
+        static std::string& getMeshIncludeCode();
 
         static std::string constructTypeDefinitions();
     };

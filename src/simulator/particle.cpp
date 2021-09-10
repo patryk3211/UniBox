@@ -13,6 +13,8 @@ using namespace nlohmann;
 std::unordered_map<std::string, Particle> Particle::particles = std::unordered_map<std::string, Particle>();
 std::unordered_map<std::string, std::list<Particle**>> Particle::deferredPointers = std::unordered_map<std::string, std::list<Particle**>>();
 std::vector<Particle*> Particle::particlesIdArray = std::vector<Particle*>();
+std::string Particle::updateInclude;
+std::string Particle::drawInclude;
 
 Particle::Particle() {
     valid = false;
@@ -142,11 +144,19 @@ Particle::Particle(const std::string& particleDir) {
 
         auto updateJson = propJson.find("update");
         if(updateJson == propJson.end()) updateScript = std::nullopt;
-        else updateScript = std::optional(particleDir + "/" + updateJson->get<std::string>());
+        else {
+            const std::string value = updateJson->get<std::string>();
+            if(value.find(':') != std::string::npos) updateScript = std::optional(particleDir + "/" + value);
+            else updateScript = std::optional(value);
+        }
 
         auto drawJson = propJson.find("draw");
         if(drawJson == propJson.end()) drawScript = std::nullopt;
-        else drawScript = std::optional(particleDir + "/" + drawJson->get<std::string>());
+        else {
+            const std::string value = drawJson->get<std::string>();
+            if(value.find(':') != std::string::npos) drawScript = std::optional(particleDir + "/" + value);
+            else drawScript = std::optional(value);
+        }
     }
 
     typeId = 0;
@@ -279,6 +289,33 @@ void Particle::loadParticlePack(const std::string& packRoot) {
             });
         } else spdlog::error("Particles property in manifest file must be an array.");
     } else spdlog::error("Every manifest must contain a particles property.");
+
+    auto includeJson = manifestJson.find("include");
+    if(includeJson != manifestJson.end()) {
+        if(includeJson->is_object()) {
+            auto updateIncludeJson = includeJson->find("update");
+            if(updateIncludeJson != includeJson->end()) {
+                if(updateIncludeJson->is_array()) {
+                    std::for_each(updateIncludeJson->begin(), updateIncludeJson->end(), [&packRoot](json item) {
+                        updateInclude += "\n";
+                        std::string value = readFile(packRoot + "/" + item.get<std::string>());
+                        updateInclude += value;
+                    });
+                } else spdlog::error("Every item in the include object must be an array.");
+            }
+
+            auto drawIncludeJson = includeJson->find("draw");
+            if(drawIncludeJson != includeJson->end()) {
+                if(drawIncludeJson->is_array()) {
+                    std::for_each(drawIncludeJson->begin(), drawIncludeJson->end(), [&packRoot](json item) {
+                        drawInclude += "\n";
+                        std::string value = readFile(packRoot + "/" + item.get<std::string>());
+                        drawInclude += value;
+                    });
+                } else spdlog::error("Every item in the include object must be an array.");
+            }
+        } else spdlog::error("Include property in manifest file must be an object.");
+    }
 }
 
 void Particle::fillPip(ParticleInfoPacket& pip) {
@@ -294,24 +331,26 @@ std::string Particle::constructSwitchCode() {
     std::string output;
     for(auto& particle : particles) {
         if(!particle.second.updateScript.has_value()) continue;
+        const std::string& scriptStr = particle.second.updateScript.value();
+        const std::string funcName = scriptStr.find(':') == std::string::npos ? scriptStr : scriptStr.substr(scriptStr.find(':')+1);
         output.append("case ");
         output.append(std::to_string(particle.second.typeId));
-        output.append(": partFuncType");
-        output.append(std::to_string(particle.second.typeId));
+        output.append(": ");
+        output.append(funcName);
         output.append("(structs, &particle); break;\n");
     }
     return output;
 }
 
-const std::regex funcDefRegex(R"((\w+) (\w+)\(([\w\s,]+(\/\*.+\*\/)*)\))");
-
 std::string Particle::constructFunctions() {
     std::string output;
     for(auto& particle : particles) {
         if(!particle.second.updateScript.has_value()) continue;
-        std::string& scriptStr = particle.second.updateScript.value();
-        std::string funcName = scriptStr.substr(scriptStr.find(':')+1);
-        std::string scriptPath = scriptStr.substr(0, scriptStr.find(':'));
+        const std::string& scriptStr = particle.second.updateScript.value();
+        if(scriptStr.find(':') == std::string::npos) continue;
+
+        const std::string funcName = scriptStr.substr(scriptStr.find(':')+1);
+        const std::string scriptPath = scriptStr.substr(0, scriptStr.find(':'));
         std::string script;
 
         {
@@ -321,21 +360,6 @@ std::string Particle::constructFunctions() {
             script = strStream.str();
         }
 
-        const std::string scriptCopy = script;
-        std::for_each(std::sregex_token_iterator(scriptCopy.begin(), scriptCopy.end(), funcDefRegex, 2), std::sregex_token_iterator(), [&particle, &script, &funcName](std::string func){
-            std::string newName = particle.first + "_" + func;
-            newName.replace(newName.find(':'), 1, "_");
-            if(funcName == func) funcName = newName;
-            
-            size_t pos;
-            size_t offset = 0;
-            while((pos = script.find(func+"(", offset)) != std::string::npos) {
-                script.replace(pos, func.length(), newName);
-                offset = pos+newName.length();
-            }
-        });
-
-        script.replace(script.find("void " + funcName + "(const SimulationStructures ")+5, funcName.size(), "partFuncType" + std::to_string(particle.second.typeId));
         output.append(script);
         output.append("\n");
     }
@@ -350,10 +374,12 @@ std::string Particle::constructMeshSwitchCode() {
     std::string output;
     for(auto& particle : particles) {
         if(!particle.second.drawScript.has_value()) continue;
+        const std::string& scriptStr = particle.second.drawScript.value();
+        const std::string funcName = scriptStr.find(':') == std::string::npos ? scriptStr : scriptStr.substr(scriptStr.find(':')+1);
         output.append("case ");
         output.append(std::to_string(particle.second.typeId));
-        output.append(": baseColor = (float4)(partFuncType");
-        output.append(std::to_string(particle.second.typeId));
+        output.append(": baseColor = (float4)(");
+        output.append(funcName);
         output.append("(baseColor.xyz, particle), baseColor.w); break;\n");
     }
     return output;
@@ -364,8 +390,10 @@ std::string Particle::constructMeshFunctions() {
     for(auto& particle : particles) {
         if(!particle.second.drawScript.has_value()) continue;
         std::string& scriptStr = particle.second.drawScript.value();
-        std::string funcName = scriptStr.substr(scriptStr.find(':')+1);
-        std::string scriptPath = scriptStr.substr(0, scriptStr.find(':'));
+        if(scriptStr.find(':') == std::string::npos) continue;
+
+        const std::string funcName = scriptStr.substr(scriptStr.find(':')+1);
+        const std::string scriptPath = scriptStr.substr(0, scriptStr.find(':'));
         std::string script;
 
         {
@@ -375,21 +403,6 @@ std::string Particle::constructMeshFunctions() {
             script = strStream.str();
         }
 
-        const std::string scriptCopy = script;
-        std::for_each(std::sregex_token_iterator(scriptCopy.begin(), scriptCopy.end(), funcDefRegex, 2), std::sregex_token_iterator(), [&particle, &script, &funcName](std::string func){
-            std::string newName = particle.first + "_" + func;
-            newName.replace(newName.find(':'), 1, "_");
-            if(funcName == func) funcName = newName;
-            
-            size_t pos;
-            size_t offset = 0;
-            while((pos = script.find(func+"(", offset)) != std::string::npos) {
-                script.replace(pos, func.length(), newName);
-                offset = pos+newName.length();
-            }
-        });
-
-        script.replace(script.find("float3 " + funcName + "(float3 ")+7, funcName.size(), "partFuncType" + std::to_string(particle.second.typeId));
         output.append(script);
         output.append("\n");
     }
@@ -412,4 +425,20 @@ std::string Particle::constructTypeDefinitions() {
         output.append("\n");
     }
     return output;
+}
+
+std::string& Particle::getIncludeCode() {
+    return updateInclude;
+}
+
+std::string& Particle::getMeshIncludeCode() {
+    return drawInclude;
+}
+
+std::string Particle::readFile(const std::string& filepath) {
+    std::ifstream stream = std::ifstream(filepath, std::ios::binary);
+    if(!stream.is_open()) return "";
+    std::stringstream strstream;
+    strstream << stream.rdbuf();
+    return strstream.str();
 }

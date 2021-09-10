@@ -77,6 +77,7 @@ void MeshGenPipeline::createMeshGenerationShader() {
         assembler.pragmaInsert("PARTICLE_CODE", Particle::constructMeshFunctions());
         assembler.pragmaInsert("PARTICLE_SWITCH", Particle::constructMeshSwitchCode());
         assembler.pragmaInsert("PARTICLE_TYPES", Particle::constructTypeDefinitions());
+        assembler.pragmaInsert("INCLUDE_CODE", Particle::getMeshIncludeCode());
         std::ofstream stream = std::ofstream("meshGenDump.cl", std::ios::binary);
         assembler.dump(stream);
         program = assembler.compile(ClEngine::getInstance()->getContext(), ClEngine::getInstance()->getDevice());

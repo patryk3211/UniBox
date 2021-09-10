@@ -1,4 +1,4 @@
-float3 draw(float3 base, const Particle vertex) {
+float3 unibox_fiber_draw(float3 base, const Particle vertex) {
     if(vertex.data[0] > 0) {
         const uint red = (vertex.data[1]>>24)&0xFF;
         const uint yel = (vertex.data[1]>>16)&0xF0;
