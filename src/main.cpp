@@ -41,8 +41,8 @@ int main(int argc, char** argv) {
     Camera* camera = new Camera();
     camera->setPosition(glm::vec3(450.0f, 450.0f, 1.0f));
     camera->setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
-    camera->orthographic(1024.0f/720.0f, -10.0f, 10.0f, zoom);
-    //camera->perspective(90.0f, 1024.0f/720.0f);
+    camera->orthographic(1280.0f/720.0f, -10.0f, 10.0f, zoom);
+    //camera->perspective(90.0f, 1280.0f/720.0f);
     zoom = 70.0f;
     camera->setPosition(glm::vec3(60, 65, 0));
     
@@ -132,9 +132,9 @@ int main(int argc, char** argv) {
         if(f == 0 || f==15 || f == 30 || f == 45)grid->simulate();
 
         glm::vec2 mouse = window.getCursorPos();
-        mouse /= glm::vec2(1024/2.0, -720/2.0);
+        mouse /= glm::vec2(1280/2.0, -720/2.0);
         mouse -= glm::vec2(1.0, -1.0);
-        mouse *= glm::vec2(70*(1024.0/720.0), 70);
+        mouse *= glm::vec2(70*(1280.0/720.0), 70);
         mouse += glm::vec2(camera->getPosition().x, camera->getPosition().y);
 
         /*if(mouse.x > 0 && mouse.y > 0 && mouse.x < 1024 && mouse.y < 1024) {
@@ -157,7 +157,7 @@ int main(int argc, char** argv) {
         if(zoom < 10.0f) dir = -dir;
         if(zoom > 600.0f) dir = -dir;
 
-        camera->orthographic(1024.0f/720.0f, -10.0f, 10.0f, zoom);
+        camera->orthographic(1280.0f/720.0f, -10.0f, 10.0f, zoom);
         camera->updateBuffer();
 
         window.render();

@@ -25,7 +25,7 @@ bool Window::init() {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-    window = glfwCreateWindow(1024, 720, "UniBox", 0, 0);
+    window = glfwCreateWindow(1280, 720, "UniBox", 0, 0);
     if(window == 0) {
         spdlog::error("Could not create a window.\n");
         return false;

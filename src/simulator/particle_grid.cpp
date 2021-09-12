@@ -210,7 +210,7 @@ void ParticleGrid::init(Camera& camera) {
 
         pipeline->addDescriptors(0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT);
 
-        if(!pipeline->assemble({ 1024, 720 }, [](VkDescriptorSetLayout layout) {
+        if(!pipeline->assemble({ 1280, 720 }, [](VkDescriptorSetLayout layout) {
             return Engine::getInstance()->allocate_descriptor_set(layout);
         })) return;
         pipeline->bindBufferToDescriptor(0, 0, camera.getBuffer().getHandle(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, sizeof(glm::mat4)*2);
