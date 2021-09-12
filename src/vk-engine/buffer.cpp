@@ -30,7 +30,7 @@ Buffer::~Buffer() {
     vmaDestroyBuffer(*get_vma(), handle, allocation);
 }
 
-void Buffer::store(void* source, uint32_t offset, size_t length) {
+void Buffer::store(const void* source, uint32_t offset, size_t length) {
     void* buffer;
     size_t copyAmount = length;
     if(copyAmount+offset > size) {

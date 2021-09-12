@@ -14,7 +14,7 @@ namespace unibox {
         Buffer(size_t size, VkBufferUsageFlags usage, VkSharingMode share, VmaMemoryUsage memType);
         ~Buffer();
 
-        void store(void* source, uint32_t offset, size_t length);
+        void store(const void* source, uint32_t offset, size_t length);
         void load(void* dest, uint32_t offset, size_t length);
 
         void* map();
