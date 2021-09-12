@@ -453,7 +453,7 @@ VkQueue Engine::getQueue(QueueType type) {
 void Engine::transfer(VkBuffer src, VkBuffer dst, size_t length) {
     CommandBuffer* buffer = allocateBuffer(TRANSFER);
     VkFence fence;
-    VkFenceCreateInfo info = { .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, .flags = VK_FENCE_CREATE_SIGNALED_BIT };
+    VkFenceCreateInfo info = { .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
     if(vkCreateFence(device, &info, 0, &fence) != VK_SUCCESS) return;
     if(buffer->startRecording()) {
         VkBufferCopy region = {
