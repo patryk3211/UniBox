@@ -45,17 +45,15 @@ namespace unibox {
         VkQueue compute_queue;
         uint32_t compute_queue_index;
 
+        VkQueue transfer_queue;
+        uint32_t transfer_queue_index;
+
         vkb::Swapchain vkb_swapchain;
         std::vector<VkImageView> imageViews;
 
-        /*std::list<CommandPool*> gfx_cmd_pools;
-        std::list<CommandBuffer*> gfx_buffers;
-
-        std::list<CommandPool*> comp_cmd_pools;
-        std::list<CommandBuffer*> comp_buffers;*/
-
         CommandPool* default_gfx_pool;
         CommandPool* default_comp_pool;
+        CommandPool* default_transfer_pool;
         CommandBuffer* default_gfx_buffer;
 
         std::unordered_map<CommandPool*, std::list<CommandBuffer*>> cmd_buffers;
@@ -115,5 +113,7 @@ namespace unibox {
         static Engine* getInstance() { return instance; }
 
         size_t padUbo(size_t bufferSize);
+
+        void transfer(VkBuffer src, VkBuffer dst, size_t length);
     };
 }

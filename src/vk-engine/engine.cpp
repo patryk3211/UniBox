@@ -141,6 +141,15 @@ bool Engine::init(GLFWwindow* window) {
     }
     compute_queue = compute_queue_ret.value();
     compute_queue_index = vkb_device.get_queue_index(vkb::QueueType::compute).value();
+
+    auto transfer_queue_ret = vkb_device.get_dedicated_queue(vkb::QueueType::transfer);
+    if(!transfer_queue_ret) {
+        transfer_queue = gfx_queue;
+        transfer_queue_index = gfx_queue_index;
+    } else {
+        transfer_queue = transfer_queue_ret.value();
+        transfer_queue_index = vkb_device.get_dedicated_queue_index(vkb::QueueType::transfer).value();
+    }
     
     uint32_t width;
     uint32_t height;
@@ -157,9 +166,11 @@ bool Engine::init(GLFWwindow* window) {
 
 bool Engine::init_commands() {
     default_gfx_pool = new CommandPool(device, gfx_queue_index);
-    default_comp_pool = new CommandPool(device, gfx_queue_index);
+    default_comp_pool = new CommandPool(device, compute_queue_index);
+    default_transfer_pool = new CommandPool(device, transfer_queue_index);
     cmd_buffers.insert({ default_gfx_pool, std::list<CommandBuffer*>() });
     cmd_buffers.insert({ default_comp_pool, std::list<CommandBuffer*>() });
+    cmd_buffers.insert({ default_transfer_pool, std::list<CommandBuffer*>() });
     default_gfx_buffer = allocateBuffer(QueueType::GRAPHICS);
     return true;
 }
@@ -387,6 +398,7 @@ CommandBuffer* Engine::allocateBuffer(QueueType type) {
     switch(type) {
         case GRAPHICS: return allocateBuffer(default_gfx_pool);
         case COMPUTE: return allocateBuffer(default_comp_pool);
+        case TRANSFER: return allocateBuffer(default_transfer_pool);
         default: return 0;
     }
 }
@@ -403,6 +415,7 @@ CommandPool* Engine::allocatePool(QueueType type) {
     switch(type) {
         case GRAPHICS: pool = new CommandPool(device, gfx_queue_index); break;
         case COMPUTE: pool = new CommandPool(device, compute_queue_index); break;
+        case TRANSFER: pool = new CommandPool(device, transfer_queue_index); break;
         default: return 0;
     }
     cmd_buffers.insert({ pool, std::list<CommandBuffer*>() });
@@ -432,6 +445,27 @@ VkQueue Engine::getQueue(QueueType type) {
         case GRAPHICS: return gfx_queue;
         case PRESENT: return present_queue;
         case COMPUTE: return compute_queue;
+        case TRANSFER: return transfer_queue;
         default: return 0;
     }
+}
+
+void Engine::transfer(VkBuffer src, VkBuffer dst, size_t length) {
+    CommandBuffer* buffer = allocateBuffer(TRANSFER);
+    VkFence fence;
+    VkFenceCreateInfo info = { .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, .flags = VK_FENCE_CREATE_SIGNALED_BIT };
+    if(vkCreateFence(device, &info, 0, &fence) != VK_SUCCESS) return;
+    if(buffer->startRecording()) {
+        VkBufferCopy region = {
+            .srcOffset = 0,
+            .dstOffset = 0,
+            .size = length
+        };
+        vkCmdCopyBuffer(buffer->getHandle(), src, dst, 1, &region);
+        buffer->stopRecording();
+
+        buffer->submit(transfer_queue, { }, { }, 0, fence);
+        vkWaitForFences(device, 1, &fence, VK_TRUE, 0xFFFFFFFF);
+    }
+    vkDestroyFence(device, fence, 0);
 }
