@@ -9,6 +9,9 @@
 #include <cl-engine/engine.hpp>
 #include <util/finalizer.hpp>
 
+#include <gui-engine/engine.hpp>
+#include <renderer/gui_renderer.hpp>
+
 #include <chrono>
 #include <future>
 #include <cmath>
@@ -27,6 +30,10 @@ int main(int argc, char** argv) {
     Window window = Window();
     if(!window.init()) return -1;
     spdlog::info("Window created succesfully.");
+
+    GuiRenderer renderer = GuiRenderer();
+    GuiEngine guiEngine = GuiEngine(renderer.getRenderEngineFunctions());
+    renderer.addRenderCallback([&guiEngine](double time) { guiEngine.render(time); });
 
     float zoom = 600.0f;
     float dir = 0;//-0.1f;
@@ -106,6 +113,7 @@ int main(int argc, char** argv) {
     spdlog::info("Random gen end");
 
     window.getEngine().addRenderFunction(ParticleGrid::renderAll);
+    window.getEngine().addRenderFunction([&renderer](VkCommandBuffer cmd) { renderer.render(cmd); });
 
     auto last = std::chrono::high_resolution_clock::now();
 

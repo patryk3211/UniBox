@@ -15,6 +15,7 @@ set(SOURCES src/main.cpp
             src/renderer/renderer.cpp
             src/renderer/buffer_renderer.cpp
             src/renderer/camera.cpp
+            src/renderer/gui_renderer.cpp
             src/compute/meshgen.cpp
             src/compute/simulator.cpp
             src/simulator/particle.cpp
@@ -22,7 +23,11 @@ set(SOURCES src/main.cpp
             src/util/shader_assembler.cpp
             src/util/savefile.cpp
             src/util/finalizer.cpp
-            src/cl-engine/engine.cpp)
+            src/util/format.cpp
+            src/cl-engine/engine.cpp
+            src/gui-engine/engine.cpp
+            src/gui-engine/object.cpp
+            src/spirv_reflect.c)
 
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -g)
 
