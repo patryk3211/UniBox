@@ -47,7 +47,7 @@ target_link_libraries(unibox "-lglfw -lvulkan -lOpenCL -ldl -lX11 -lXxf86vm -lXr
 
 add_custom_target(unibox-prepare-run
                   mkdir -p ${CMAKE_SOURCE_DIR}/run && cp ${CMAKE_BINARY_DIR}/unibox ${CMAKE_SOURCE_DIR}/run/unibox
-                  DEPENDS unibox particles
+                  DEPENDS unibox ${CMAKE_SOURCE_DIR}/run/particles ${CMAKE_SOURCE_DIR}/run/resources
                   BYPRODUCTS ${CMAKE_SOURCE_DIR}/run/unibox)
 
 add_custom_target(unibox-run
@@ -55,9 +55,13 @@ add_custom_target(unibox-run
                   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/run
                   DEPENDS unibox-prepare-run)
 
-add_custom_target(particles
-                  cp -r ${CMAKE_SOURCE_DIR}/particles ${CMAKE_SOURCE_DIR}/run
+add_custom_command(OUTPUT ${CMAKE_SOURCE_DIR}/run/particles
+                  COMMAND cp -r ${CMAKE_SOURCE_DIR}/particles ${CMAKE_SOURCE_DIR}/run
                   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+add_custom_command(OUTPUT ${CMAKE_SOURCE_DIR}/run/resources
+                   COMMAND cp -r ${CMAKE_SOURCE_DIR}/resources ${CMAKE_SOURCE_DIR}/run
+                   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 add_subdirectory(spdlog)
 add_subdirectory(vk-bootstrap)
