@@ -27,6 +27,8 @@ namespace unibox {
         bool depthTest;
         bool depthWrite;
         VkCompareOp compareOp;
+
+        bool blendEnable;
     public:
         GraphicsPipeline(VkDevice device, VkRenderPass renderPass);
         GraphicsPipeline();
@@ -42,6 +44,8 @@ namespace unibox {
         void addDepthStencil(bool testEnable, bool writeEnable, VkCompareOp compareOp);
 
         void bindBufferToDescriptor(int set, int binding, VkBuffer buffer, VkDescriptorType type, size_t offset, size_t length);
+
+        void enableAlphaBlend();
 
         bool assemble(const VkExtent2D& swapChainExtent, VkDescriptorSet (*descriptorSetAllocator)(VkDescriptorSetLayout));
         bool assemble(const VkExtent2D& swapChainExtent);

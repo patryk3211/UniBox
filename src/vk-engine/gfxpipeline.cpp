@@ -11,6 +11,8 @@ GraphicsPipeline::GraphicsPipeline(VkDevice device, VkRenderPass renderPass) {
     for(int i = 0; i < 4; i++) descriptorLayout[i] = 0;
     layout = 0;
     handle = 0;
+
+    blendEnable = false;
 }
 
 GraphicsPipeline::GraphicsPipeline() {
@@ -20,12 +22,18 @@ GraphicsPipeline::GraphicsPipeline() {
     for(int i = 0; i < 4; i++) descriptorLayout[i] = 0;
     layout = 0;
     handle = 0;
+
+    blendEnable = false;
 }
 
 GraphicsPipeline::~GraphicsPipeline() {
     vkDestroyPipeline(device, handle, 0);
     vkDestroyPipelineLayout(device, layout, 0);
     for(int i = 0; i < 4; i++) vkDestroyDescriptorSetLayout(device, descriptorLayout[i], 0);
+}
+
+void GraphicsPipeline::enableAlphaBlend() {
+    blendEnable = true;
 }
 
 void GraphicsPipeline::addShader(Shader* shader) {
@@ -139,7 +147,18 @@ bool GraphicsPipeline::assemble(const VkExtent2D& swapChainExtent, VkDescriptorS
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
     colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    colorBlendAttachment.blendEnable = VK_FALSE;
+    if(!blendEnable) colorBlendAttachment.blendEnable = VK_FALSE;
+    else {
+        colorBlendAttachment.blendEnable = VK_TRUE;
+
+        colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+        colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+
+        colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+        colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+        colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+    }
 
     VkPipelineColorBlendStateCreateInfo colorBlending{};
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
