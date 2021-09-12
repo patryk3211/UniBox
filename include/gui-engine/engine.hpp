@@ -44,6 +44,9 @@ namespace unibox {
         struct comparer;
 
         std::unordered_map<gui_handle, GuiObject> guiObjects;
+
+        gui_resource_handle default_shader;
+        gui_resource_handle default_mesh;
     public:
         GuiEngine(const RenderEngine& renderEngine);
         ~GuiEngine();

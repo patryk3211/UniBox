@@ -33,7 +33,7 @@ GuiRenderer::GuiRenderer() {
     functions.render_object = [&](gui_resource_handle handle) {
         std::optional<RenderObject*> obj = getResource<RenderObject>(handle);
         if(obj.has_value()) {
-            if(obj.value()->pipeline == 0) return;
+            if(obj.value()->shader == 0) return;
             for(auto iter = objectsToRender.begin(); iter != objectsToRender.end(); iter++) {
                 if((*iter)->layer < obj.value()->layer) {
                     objectsToRender.insert(iter, &std::any_cast<RenderObject&>(resources[handle]->value));
@@ -132,14 +132,14 @@ GuiRenderer::GuiRenderer() {
         size_t pushOffset = 0;
         { // Create vertex shader descriptors and push constants
             uint32_t descBindCount;
-            vertReflectMod.EnumerateDescriptorBindings(&descBindCount, 0); // TODO: Create buffers for uniform variables.
+            vertReflectMod.EnumerateDescriptorBindings(&descBindCount, 0);
             SpvReflectDescriptorBinding** descriptorBindings = (SpvReflectDescriptorBinding**)alloca(descBindCount*sizeof(SpvReflectDescriptorBinding*));
             vertReflectMod.EnumerateDescriptorBindings(&descBindCount, descriptorBindings);
 
             for(int i = 0; i < descBindCount; i++) {
                 pipeline->addDescriptors(descriptorBindings[i]->set, descriptorBindings[i]->binding, static_cast<VkDescriptorType>(descriptorBindings[i]->descriptor_type), descriptorBindings[i]->count, VK_SHADER_STAGE_VERTEX_BIT);
 
-                GuiShader::DescriptorInfo info = { // TODO: Add to fragment
+                GuiShader::DescriptorInfo info = {
                     .set = descriptorBindings[i]->set,
                     .binding = descriptorBindings[i]->binding,
                     .type = static_cast<VkDescriptorType>(descriptorBindings[i]->descriptor_type)
@@ -163,20 +163,23 @@ GuiRenderer::GuiRenderer() {
 
             for(int i = 0; i < pushCount; i++) {
                 pipeline->addPushConstant(pushOffset, pushConstants[i]->size, VK_SHADER_STAGE_VERTEX_BIT);
+                for(int j = 0; j < pushConstants[i]->member_count; j++) 
+                    shaderResource.pushConstants.insert({ pushConstants[i]->members[j].name, pushOffset });
                 pushOffset += pushConstants[i]->size;
             }
         }
+        shaderResource.pushSizeVertex = pushOffset;
 
         { // Create fragment shader descriptors and push constants
             uint32_t descBindCount;
-            fragReflectMod.EnumerateDescriptorBindings(&descBindCount, 0); // TODO: Create buffers for uniform variables.
+            fragReflectMod.EnumerateDescriptorBindings(&descBindCount, 0);
             SpvReflectDescriptorBinding** descriptorBindings = (SpvReflectDescriptorBinding**)alloca(descBindCount*sizeof(SpvReflectDescriptorBinding*));
             fragReflectMod.EnumerateDescriptorBindings(&descBindCount, descriptorBindings);
 
             for(int i = 0; i < descBindCount; i++) {
                 pipeline->addDescriptors(descriptorBindings[i]->set, descriptorBindings[i]->binding, static_cast<VkDescriptorType>(descriptorBindings[i]->descriptor_type), descriptorBindings[i]->count, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-                GuiShader::DescriptorInfo info = { // TODO: Add to fragment
+                GuiShader::DescriptorInfo info = {
                     .set = descriptorBindings[i]->set,
                     .binding = descriptorBindings[i]->binding,
                     .type = static_cast<VkDescriptorType>(descriptorBindings[i]->descriptor_type),
@@ -201,14 +204,22 @@ GuiRenderer::GuiRenderer() {
 
             for(int i = 0; i < pushCount; i++) {
                 pipeline->addPushConstant(pushOffset, pushConstants[i]->size, VK_SHADER_STAGE_FRAGMENT_BIT);
+                for(int j = 0; j < pushConstants[i]->member_count; j++) 
+                    shaderResource.pushConstants.insert({ pushConstants[i]->members[j].name, pushOffset });
                 pushOffset += pushConstants[i]->size;
             }
         }
+        shaderResource.pushSizeFragment = pushOffset-shaderResource.pushSizeVertex;
 
-        if(pushOffset > 128) spdlog::warn("Combined push contant size exceeds the 128 byte limit.");
+        if(pushOffset > 128) spdlog::warn("Combined push contant size exceeds the 128 byte limit, things may break!");
+
+        if(pushOffset > 0) {
+            shaderResource.pushConstant = new uint8_t[pushOffset];
+            memset(shaderResource.pushConstant, 0, pushOffset);
+        }
 
         // TODO: [11.09.2021] Change the size of this pipeline according to the current window size.
-        if(!pipeline->assemble({ 1024, 720 })) {
+        if(!pipeline->assemble({ 1280, 720 })) {
             delete pipeline;
             return (gui_resource_handle)0;
         }
@@ -266,7 +277,13 @@ GuiRenderer::GuiRenderer() {
         if(!shaderRef.has_value()) return;
 
         auto desc = shaderRef.value()->descriptors.find(descName);
-        if(desc == shaderRef.value()->descriptors.end()) return;
+        if(desc == shaderRef.value()->descriptors.end()) {
+            // Check push constants.
+            auto cons = shaderRef.value()->pushConstants.find(descName);
+            if(cons == shaderRef.value()->pushConstants.end()) return;
+            memcpy(shaderRef.value()->pushConstant+cons->second+offset, data, length);
+            return;
+        }
         if(desc->second.boundBuffer == 0) return;
 
         auto buffer = getResource<GuiBuffer>(desc->second.boundBuffer);
@@ -284,7 +301,7 @@ GuiRenderer::GuiRenderer() {
         auto renObjRef = getResource<RenderObject>(renderObject);
         if(!renObjRef.has_value()) return;
 
-        renObjRef.value()->pipeline = shaderRef.value()->pipeline;
+        renObjRef.value()->shader = shaderRef.value();
     };
 
     functions.set_render_layer = [&](gui_resource_handle renderObject, int layer) {
@@ -361,13 +378,17 @@ void GuiRenderer::render(VkCommandBuffer cmd) {
 
     GraphicsPipeline* currentPipeline = 0;
     for(auto& object : objectsToRender) {
-        if(object->pipeline != currentPipeline) {
-            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, object->pipeline->getHandle());
-            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, object->pipeline->getLayout(), 0, 1, object->pipeline->getDescriptorSet(), 0, 0);
+        if(object->shader->pipeline != currentPipeline) {
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, object->shader->pipeline->getHandle());
+            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, object->shader->pipeline->getLayout(), 0, 1, object->shader->pipeline->getDescriptorSet(), 0, 0);
+            currentPipeline = object->shader->pipeline;
         }
 
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(cmd, 0, 1, &object->mesh->vertexBuffer->getHandle(), offsets);
+
+        if(object->shader->pushSizeVertex > 0) vkCmdPushConstants(cmd, currentPipeline->getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, object->shader->pushSizeVertex, object->shader->pushConstant);
+        if(object->shader->pushSizeFragment > 0) vkCmdPushConstants(cmd, currentPipeline->getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, object->shader->pushSizeVertex, object->shader->pushSizeFragment, object->shader->pushConstant);
 
         if(object->mesh->indexBuffer != 0) {
             // Indexed draw

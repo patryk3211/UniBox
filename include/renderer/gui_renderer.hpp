@@ -55,16 +55,6 @@ namespace unibox {
             uint vertexCount;
         };
 
-        struct RenderObject {
-            Mesh* mesh;
-            GraphicsPipeline* pipeline;
-            int layer;
-        };
-
-        struct GuiBuffer {
-            Buffer* buffer;
-        };
-
         struct GuiShader {
             struct DescriptorInfo {
                 uint set;
@@ -78,6 +68,20 @@ namespace unibox {
 
             GraphicsPipeline* pipeline;
             std::unordered_map<std::string, DescriptorInfo> descriptors;
+            std::unordered_map<std::string, uint> pushConstants;
+            uint8_t* pushConstant;
+            uint pushSizeVertex;
+            uint pushSizeFragment;
+        };
+
+        struct RenderObject {
+            Mesh* mesh;
+            GuiShader* shader;
+            int layer;
+        };
+
+        struct GuiBuffer {
+            Buffer* buffer;
         };
 
         const std::type_info& RENDER_OBJECT = typeid(RenderObject);

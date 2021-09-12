@@ -2,19 +2,22 @@
 
 #include <istream>
 #include <fstream>
-
 #include <string.h>
+
+#include <glm/mat4x4.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 using namespace unibox;
 
+#define DEFAULT_VERTEX_SHADER "shaders/gui/default/vertex.spv"
+#define DEFAULT_FRAGMENT_SHADER "shaders/gui/default/fragment.spv"
 gui_resource_handle h;
-
 GuiEngine::GuiEngine(const RenderEngine& renderEngine) {
     this->renderEngine = renderEngine;
     nextHandle = 1;
 
-    std::ifstream vs("shaders/default/vertex.spv", std::ios::binary | std::ios::ate);
-    std::ifstream fs("shaders/default/fragment.spv", std::ios::binary | std::ios::ate);
+    std::ifstream vs(DEFAULT_VERTEX_SHADER, std::ios::binary | std::ios::ate);
+    std::ifstream fs(DEFAULT_FRAGMENT_SHADER, std::ios::binary | std::ios::ate);
     if(!vs.is_open() || !fs.is_open()) return;
 
     size_t lenV = vs.tellg();
@@ -29,42 +32,39 @@ GuiEngine::GuiEngine(const RenderEngine& renderEngine) {
     vs.read((char*)vcode.data(), lenV);
     fs.read((char*)fcode.data(), lenF);
 
-    gui_resource_handle sh = renderEngine.create_shader(vcode, fcode, SPIRV);
+    default_shader = renderEngine.create_shader(vcode, fcode, SPIRV);
 
-    float values[32];
-    for(int i = 0; i < 32; i++) values[i] = 0;
-    values[0] = 1;
-    values[5] = 1;
-    values[10] = 1;
-    values[15] = 1;
+    float aspect = 1280.0/720.0;
+    glm::mat4 projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 10.0f, -10.0f);
+    projection[1][0] = -projection[1][0];
+    projection[1][1] = -projection[1][1];
+    projection[1][2] = -projection[1][2];
+    projection[1][3] = -projection[1][3];
 
-    values[16] = 1;
-    values[21] = 1;
-    values[26] = 1;
-    values[31] = 1;
+    glm::mat4 transform = glm::translate(glm::mat4(1), glm::vec3(0, 0, 0));
 
-    renderEngine.set_shader_variable(sh, "globalMatricies", values, 0, sizeof(values));
+    renderEngine.set_shader_variable(default_shader, "matrices", &projection, 0, sizeof(projection));
+    renderEngine.set_shader_variable(default_shader, "transformMatrix", &transform, 0, sizeof(transform));
 
-    gui_resource_handle msh = renderEngine.create_mesh();
+    default_mesh = renderEngine.create_mesh();
 
-    float data[3*4*4] = {
-        0, 0, 0, 1,
-        1, 1, 1, 1,
-
-        0, 1, 0, 1,
-        1, 1, 1, 1,
-
-        1, 0, 0, 1,
-        1, 1, 1, 1
+    float data[] = {
+        -0.5, -0.5, 0.0,
+        -0.5,  0.5, 0.0,
+         0.5, -0.5, 0.0,
+        -0.5,  0.5, 0.0,
+         0.5,  0.5, 0.0,
+         0.5, -0.5, 0.0
     };
 
     std::vector<uint8_t> vec(sizeof(data));
     memcpy(vec.data(), data, sizeof(data));
-    renderEngine.add_mesh_vertex_data(msh, vec, 3);
+    renderEngine.add_mesh_vertex_data(default_mesh, vec, 6);
 
     gui_resource_handle ren = renderEngine.create_render_object();
-    renderEngine.attach_mesh(ren, msh);
-    renderEngine.set_render_object_shader(ren, sh);
+    renderEngine.attach_mesh(ren, default_mesh);
+    renderEngine.set_render_object_shader(ren, default_shader);
+
     h = ren;
 }
 
