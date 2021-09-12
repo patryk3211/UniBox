@@ -10,6 +10,7 @@
 #include <thread>
 #include <unordered_map>
 #include <mutex>
+#include <algorithm>
 
 #include <vk-engine/commandpool.hpp>
 #include <vk-engine/commandbuffer.hpp>
@@ -72,7 +73,7 @@ namespace unibox {
         VkDescriptorPool lastPool;
         std::list<VkDescriptorPool> pools;
 
-        std::vector<void (*)(VkCommandBuffer)> renderCalls;
+        std::vector<std::function<void(VkCommandBuffer)>> renderCalls;
 
         bool init_swapchain(uint32_t width, uint32_t height);
         bool init_commands();
@@ -98,7 +99,7 @@ namespace unibox {
         VkDevice getDevice() { return device; }
         VkRenderPass getRenderPass() { return renderpass; }
 
-        void addRenderFunction(void (*renderFunc)(VkCommandBuffer));
+        void addRenderFunction(std::function<void(VkCommandBuffer)> renderFunc);
 
         bool isRendering();
 

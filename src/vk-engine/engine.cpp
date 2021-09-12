@@ -306,7 +306,7 @@ void Engine::draw() {
 
     vkCmdBeginRenderPass(default_gfx_buffer->getHandle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
 
-    for(int i = 0; i < renderCalls.size(); i++) renderCalls.data()[i](default_gfx_buffer->getHandle());
+    for(int i = 0; i < renderCalls.size(); i++) renderCalls[i](default_gfx_buffer->getHandle());
 
     vkCmdEndRenderPass(default_gfx_buffer->getHandle());
 
@@ -372,7 +372,7 @@ VkDescriptorSet Engine::allocate_descriptor_set(VkDescriptorSetLayout layout) {
     return allocate_descriptor_set(layout);
 }
 
-void Engine::addRenderFunction(void (*renderFunc)(VkCommandBuffer)) {
+void Engine::addRenderFunction(std::function<void(VkCommandBuffer)> renderFunc) {
     renderCalls.push_back(renderFunc);
 }
 
