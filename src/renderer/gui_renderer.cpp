@@ -300,7 +300,6 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
             memset(shaderResource.pushConstant, 0, pushOffset);
         }
 
-        // TODO: [11.09.2021] Change the size of this pipeline according to the current window size.
         pipeline->setDescriptorAllocate(false);
         if(!pipeline->assemble({ functions.width, functions.height })) {
             delete pipeline;
