@@ -389,6 +389,13 @@ VkDescriptorSet Engine::allocate_descriptor_set(VkDescriptorSetLayout layout) {
     return allocate_descriptor_set(layout);
 }
 
+void Engine::free_descriptor_set(VkDescriptorSet set) {
+    for(auto& pool : pools) {
+        VkResult res = vkFreeDescriptorSets(device, pool, 1, &set);
+        if(res == VK_SUCCESS) break;
+    }
+}
+
 void Engine::addRenderFunction(std::function<void(VkCommandBuffer)> renderFunc) {
     renderCalls.push_back(renderFunc);
 }

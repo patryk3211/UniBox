@@ -4,8 +4,8 @@
 
 using namespace unibox::gui;
 
-Image::Image(GuiEngine& engine, gui_resource_handle tex, double posX, double posY, double width, double height)
-    : GuiObject(engine, 0, posX, posY, width, height) {
+Image::Image(GuiEngine& engine, gui_resource_handle shader, gui_resource_handle tex, double posX, double posY, double width, double height)
+    : GuiObject(engine, shader, 0, posX, posY, width, height) {
     this->tex = tex;
 }
 
@@ -14,6 +14,6 @@ Image::~Image() {
 }
 
 void Image::render(double frameTime) {
-    renderEngine.bind_texture_to_descriptor(getShader(), "texture0", tex);
+    renderEngine.bind_texture_to_descriptor(getRenderObject(), "texture0", tex);
     GuiObject::render(frameTime);
 }

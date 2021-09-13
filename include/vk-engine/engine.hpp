@@ -93,6 +93,7 @@ namespace unibox {
         void draw();
 
         VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout);
+        void free_descriptor_set(VkDescriptorSet set);
 
         VkDevice getDevice() { return device; }
         VkRenderPass getRenderPass() { return renderpass; }

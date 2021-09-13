@@ -18,8 +18,32 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
     functions.width = width;
     functions.height = height;
 
-    functions.create_render_object = [&]() {
+    // Create Render Object
+    functions.create_render_object = [&](gui_resource_handle shader) {
+        auto shaderRef = getResource<GuiShader>(shader);
+        if(!shaderRef.has_value()) return (gui_resource_handle)0;
         RenderObject object = {};
+
+        object.shader = shaderRef.value();
+        object.objectSet = object.shader->pipeline->allocateSet(0);
+        for(auto& desc : object.shader->set0BufferCreate) {
+            Buffer* buffer = new Buffer(desc.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_CPU_TO_GPU);
+            GuiBuffer bufRes = { buffer };
+            Resource* res = new Resource(bufRes, [](Resource& value) { 
+                auto opt = value.get<GuiBuffer>();
+                if(opt.has_value()) delete opt.value()->buffer;
+            });
+            gui_resource_handle handle = nextHandle;
+            nextHandle++;
+            resources.insert({ handle, res });
+
+            desc.isDefault = true;
+            desc.boundBuffer = handle;
+            desc.boundOffset = 0;
+            desc.boundLength = desc.size;
+
+            object.shader->pipeline->bindBufferToDescriptor(object.objectSet, desc.binding, buffer->getHandle(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, desc.size);
+        }
 
         Resource* resource = new Resource(object);
         gui_resource_handle handle = nextHandle;
@@ -28,6 +52,8 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
 
         return handle;
     };
+
+    // Destroy Resource
     functions.destroy_resource = [&](gui_resource_handle handle) { 
         if(handle != 0 && resources.find(handle) != resources.end()) {
             delete resources[handle];
@@ -35,6 +61,7 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
         }
     };
 
+    // Render Object
     functions.render_object = [&](gui_resource_handle handle) {
         std::optional<RenderObject*> obj = getResource<RenderObject>(handle);
         if(obj.has_value()) {
@@ -44,8 +71,10 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
                 if(state.currentShader != renderObject->shader) {
                     state.currentShader = renderObject->shader;
                     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, renderObject->shader->pipeline->getHandle());
-                    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, renderObject->shader->pipeline->getLayout(), 0, 1, renderObject->shader->pipeline->getDescriptorSet(), 0, 0);
+                    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, renderObject->shader->pipeline->getLayout(), 1, 1, &renderObject->shader->shaderSet, 0, 0);
                 }
+
+                vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, renderObject->shader->pipeline->getLayout(), 0, 1, &renderObject->objectSet, 0, 0);
 
                 VkDeviceSize offsets[] = {0};
                 vkCmdBindVertexBuffers(cmd, 0, 1, &renderObject->mesh->vertexBuffer->getHandle(), offsets);
@@ -65,6 +94,7 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
         }
     };
 
+    // Create Shader
     functions.create_shader = [&](const std::any& vertex, const std::any& fragment, ShaderLanguage lang) {
         if(lang != SPIRV) return (gui_resource_handle)0; // Don't handle other languages for now.
 
@@ -163,17 +193,27 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
                 GuiShader::DescriptorInfo info = {
                     .set = descriptorBindings[i]->set,
                     .binding = descriptorBindings[i]->binding,
+                    .size = descriptorBindings[i]->block.padded_size,
                     .type = static_cast<VkDescriptorType>(descriptorBindings[i]->descriptor_type)
                 };
                 auto pair = shaderResource.descriptors.insert({ descriptorBindings[i]->name, info }); // TODO: Change it so that it adds individual fields instead of the whole block.
 
                 if(descriptorBindings[i]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
-                    buffersToCreate.push_back({
-                        descriptorBindings[i]->set,
-                        descriptorBindings[i]->binding,
-                        descriptorBindings[i]->block.padded_size,
-                        &pair.first->second
-                    });
+                    if(descriptorBindings[i]->set == 1) {
+                        buffersToCreate.push_back({
+                            descriptorBindings[i]->set,
+                            descriptorBindings[i]->binding,
+                            descriptorBindings[i]->block.padded_size,
+                            &pair.first->second
+                        });
+                    } else if(descriptorBindings[i]->set == 0) {
+                        GuiShader::DescriptorInfo descInf = {};
+                        descInf.set = 0;
+                        descInf.size = descriptorBindings[i]->block.padded_size;
+                        descInf.binding = descriptorBindings[i]->binding;
+                        descInf.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                        shaderResource.set0BufferCreate.push_back(descInf);
+                    }
                 }
             }
 
@@ -203,18 +243,27 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
                 GuiShader::DescriptorInfo info = {
                     .set = descriptorBindings[i]->set,
                     .binding = descriptorBindings[i]->binding,
-                    .type = static_cast<VkDescriptorType>(descriptorBindings[i]->descriptor_type),
-                    .boundBuffer = 0
+                    .size = descriptorBindings[i]->block.padded_size,
+                    .type = static_cast<VkDescriptorType>(descriptorBindings[i]->descriptor_type)
                 };
                 auto pair = shaderResource.descriptors.insert({ descriptorBindings[i]->name, info });
 
                 if(descriptorBindings[i]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
-                    buffersToCreate.push_back({
-                        descriptorBindings[i]->set,
-                        descriptorBindings[i]->binding,
-                        descriptorBindings[i]->block.padded_size,
-                        &pair.first->second
-                    });
+                    if(descriptorBindings[i]->set == 1) {
+                        buffersToCreate.push_back({
+                            descriptorBindings[i]->set,
+                            descriptorBindings[i]->binding,
+                            descriptorBindings[i]->block.padded_size,
+                            &pair.first->second
+                        });
+                    } else if(descriptorBindings[i]->set == 0) {
+                        GuiShader::DescriptorInfo descInf = {};
+                        descInf.set = 0;
+                        descInf.size = descriptorBindings[i]->block.padded_size;
+                        descInf.binding = descriptorBindings[i]->binding;
+                        descInf.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                        shaderResource.set0BufferCreate.push_back(descInf);
+                    }
                 }
             }
 
@@ -240,11 +289,13 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
         }
 
         // TODO: [11.09.2021] Change the size of this pipeline according to the current window size.
+        pipeline->setDescriptorAllocate(false);
         if(!pipeline->assemble({ functions.width, functions.height })) {
             delete pipeline;
             return (gui_resource_handle)0;
         }
         shaderResource.pipeline = pipeline;
+        shaderResource.shaderSet = pipeline->allocateSet(1); // Bound once per shader.
 
         for(auto& desc : buffersToCreate) {
             Buffer* buffer = new Buffer(desc.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_CPU_TO_GPU);
@@ -262,7 +313,10 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
             desc.info->boundOffset = 0;
             desc.info->boundLength = desc.size;
 
-            pipeline->bindBufferToDescriptor(desc.set, desc.binding, buffer->getHandle(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, desc.size);
+            glm::mat4 m = glm::mat4(1);
+            buffer->load(&m, 0, sizeof(m));
+
+            pipeline->bindBufferToDescriptor(shaderResource.shaderSet, desc.binding, buffer->getHandle(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, desc.size);
         }
 
         Resource* resource = new Resource(shaderResource, [](Resource& value) { 
@@ -276,19 +330,29 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
         return handle;
     };
 
-    functions.bind_buffer_to_descriptor = [&](gui_resource_handle shader, const std::string& descName, gui_resource_handle buffer, size_t offset, size_t length) {
-        auto shaderRef = getResource<GuiShader>(shader);
-        if(!shaderRef.has_value()) return;
-        auto desc = shaderRef.value()->descriptors.find(descName);
-        if(desc == shaderRef.value()->descriptors.end()) return;
+    // Bind Buffer to Shader Descriptor
+    functions.bind_buffer_to_descriptor = [&](gui_resource_handle resource, const std::string& descName, gui_resource_handle buffer, size_t offset, size_t length) {
+        auto renObjRef = getResource<RenderObject>(resource);
+        GuiShader* shdr = 0;
+        RenderObject* gfx = 0;
+        if(!renObjRef.has_value()) {
+            auto shaderRef = getResource<GuiShader>(resource);
+            if(!shaderRef.has_value()) return;
+            shdr = shaderRef.value();
+        } else {
+            shdr = renObjRef.value()->shader;
+            gfx = renObjRef.value();
+        }
+        auto desc = shdr->descriptors.find(descName);
+        if(desc == shdr->descriptors.end()) return;
 
         auto bufferRef = getResource<GuiBuffer>(buffer);
         if(!bufferRef.has_value()) return;
 
-        GraphicsPipeline* gfx = shaderRef.value()->pipeline;
         Buffer* bfr = bufferRef.value()->buffer;
-        renderActions.push([desc, gfx, this, buffer, offset, length, bfr](RenderingState state, VkCommandBuffer cmd) {
-            gfx->bindBufferToDescriptor(desc->second.set, desc->second.binding, bfr->getHandle(), desc->second.type, offset, length);
+        renderActions.push([desc, gfx, this, buffer, offset, length, bfr, shdr](RenderingState state, VkCommandBuffer cmd) {
+            if(desc->second.set == 1) shdr->pipeline->bindBufferToDescriptor(shdr->shaderSet, desc->second.binding, bfr->getHandle(), desc->second.type, offset, length);
+            else if(desc->second.set == 0) shdr->pipeline->bindBufferToDescriptor(gfx->objectSet, desc->second.binding, bfr->getHandle(), desc->second.type, offset, length);
             if(desc->second.boundBuffer != 0 && desc->second.isDefault) functions.destroy_resource(desc->second.boundBuffer);
             desc->second.boundBuffer = buffer;
             desc->second.boundOffset = offset;
@@ -297,17 +361,27 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
         });
     };
 
-    functions.set_shader_variable = [&](gui_resource_handle shader, const std::string& descName, void* data, size_t offset, size_t length) {
-        auto shaderRef = getResource<GuiShader>(shader);
-        if(!shaderRef.has_value()) return;
+    // Set Shader Variable
+    functions.set_shader_variable = [&](gui_resource_handle resource, const std::string& descName, void* data, size_t offset, size_t length) {
+        GuiShader* shdr;
+        {
+            auto renObjRef = getResource<RenderObject>(resource);
+            if(!renObjRef.has_value()) {
+                auto shaderRef = getResource<GuiShader>(resource);
+                if(!shaderRef.has_value()) return;
+                shdr = shaderRef.value();
+            } else {
+                shdr = renObjRef.value()->shader;
+            }
+        }
+        
 
-        auto desc = shaderRef.value()->descriptors.find(descName);
-        if(desc == shaderRef.value()->descriptors.end()) {
+        auto desc = shdr->descriptors.find(descName);
+        if(desc == shdr->descriptors.end()) {
             // Check push constants.
-            auto cons = shaderRef.value()->pushConstants.find(descName);
-            if(cons == shaderRef.value()->pushConstants.end()) return;
+            auto cons = shdr->pushConstants.find(descName);
+            if(cons == shdr->pushConstants.end()) return;
 
-            GuiShader* shdr = shaderRef.value();
             uint8_t* dataCpy = new uint8_t[length];
             memcpy(dataCpy, data, length);
             renderActions.push([dataCpy, cons, offset, length, shdr](RenderingState state, VkCommandBuffer cmd) {
@@ -330,16 +404,7 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
         }
     };
 
-    functions.set_render_object_shader = [&](gui_resource_handle renderObject, gui_resource_handle shader) {
-        auto shaderRef = getResource<GuiShader>(shader);
-        if(!shaderRef.has_value()) return;
-
-        auto renObjRef = getResource<RenderObject>(renderObject);
-        if(!renObjRef.has_value()) return;
-
-        renObjRef.value()->shader = shaderRef.value();
-    };
-
+    // Create Mesh
     functions.create_mesh = [&]() {
         Mesh mesh = { };
         Resource* resource = new Resource(mesh, [](Resource& value) {
@@ -356,6 +421,7 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
         return handle;
     };
 
+    // Add Mesh Vertex Data
     functions.add_mesh_vertex_data = [&](gui_resource_handle mesh, const std::vector<uint8_t>& data, uint vertexCount) {
         auto meshRef = getResource<Mesh>(mesh);
         if(!meshRef.has_value()) return;
@@ -371,6 +437,7 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
         Engine::getInstance()->transfer(srcBuf.getHandle(), msh->vertexBuffer->getHandle(), data.size());
     };
 
+    // Add Mesh Indicies
     functions.add_mesh_indices = [&](gui_resource_handle mesh, const std::vector<uint>& indices, uint vertexCount) {
         auto meshRef = getResource<Mesh>(mesh);
         if(!meshRef.has_value()) return;
@@ -386,6 +453,7 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
         Engine::getInstance()->transfer(srcBuf.getHandle(), msh->indexBuffer->getHandle(), indices.size()*sizeof(uint));
     };
 
+    // Attach Mesh to Render Object
     functions.attach_mesh = [&](gui_resource_handle renderObject, gui_resource_handle mesh) {
         auto meshRef = getResource<Mesh>(mesh);
         if(!meshRef.has_value()) return;
@@ -396,22 +464,34 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
         renObjRef.value()->mesh = meshRef.value();
     };
 
-    functions.bind_texture_to_descriptor = [&](gui_resource_handle shader, const std::string& descName, gui_resource_handle image) {
-        auto shaderRef = getResource<GuiShader>(shader);
-        if(!shaderRef.has_value()) return;
-        auto desc = shaderRef.value()->descriptors.find(descName);
-        if(desc == shaderRef.value()->descriptors.end()) return;
+    // Bind Texture to Shader Descriptor
+    functions.bind_texture_to_descriptor = [&](gui_resource_handle resource, const std::string& descName, gui_resource_handle image) {
+        auto renObjRef = getResource<RenderObject>(resource);
+        GuiShader* shdr = 0;
+        RenderObject* gfx = 0;
+        if(!renObjRef.has_value()) {
+            auto shaderRef = getResource<GuiShader>(resource);
+            if(!shaderRef.has_value()) return;
+            shdr = shaderRef.value();
+        } else {
+            shdr = renObjRef.value()->shader;
+            gfx = renObjRef.value();
+        }
+        auto desc = shdr->descriptors.find(descName);
+        if(desc == shdr->descriptors.end()) return;
 
         auto imageRef = getResource<Texture>(image);
         if(!imageRef.has_value()) return;
 
         Image* img = imageRef.value()->image;
-        GraphicsPipeline* gfx = shaderRef.value()->pipeline;
-        renderActions.push([desc, img, gfx](RenderingState state, VkCommandBuffer cmd) {
-            gfx->bindImageToDescriptor(desc->second.set, desc->second.binding, img->getImageView(), img->getSampler(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, desc->second.type);
+        
+        renderActions.push([desc, img, gfx, shdr](RenderingState state, VkCommandBuffer cmd) {
+            if(desc->second.set == 1) shdr->pipeline->bindImageToDescriptor(shdr->shaderSet, desc->second.binding, img->getImageView(), img->getSampler(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, desc->second.type);
+            else if(desc->second.set == 0 && gfx != 0) shdr->pipeline->bindImageToDescriptor(gfx->objectSet, desc->second.binding, img->getImageView(), img->getSampler(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, desc->second.type);
         });
     };
 
+    // Create Texture
     functions.create_texture = [&](uint width, uint height, const void* data, ImageFilter minFilter, ImageFilter magFilter) {
         Image* img = new Image(width, height, VK_IMAGE_USAGE_SAMPLED_BIT, VK_SHARING_MODE_EXCLUSIVE, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL);
         img->loadImage(data, (width*height)*4);

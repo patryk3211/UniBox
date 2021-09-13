@@ -23,10 +23,12 @@ namespace unibox::gui {
         uint width;
         uint height;
 
-        std::function<gui_resource_handle()> create_render_object;
+        std::function<gui_resource_handle(gui_resource_handle shader)> create_render_object;
         std::function<void(gui_resource_handle)> render_object;
-        std::function<void(gui_resource_handle renderObject, gui_resource_handle shader)> set_render_object_shader;
         std::function<void(gui_resource_handle renderObject, gui_resource_handle mesh)> attach_mesh;
+        std::function<void(gui_resource_handle renderObject, const std::string&, void*, size_t, size_t)> set_shader_variable;
+        std::function<void(gui_resource_handle renderObject, const std::string&, gui_resource_handle, size_t offset, size_t length)> bind_buffer_to_descriptor;
+        std::function<void(gui_resource_handle renderObject, const std::string&, gui_resource_handle)> bind_texture_to_descriptor;
 
         std::function<gui_resource_handle()> create_mesh;
         std::function<void(gui_resource_handle, const std::vector<uint8_t>& data, uint vertexCount)> add_mesh_vertex_data;
@@ -37,9 +39,6 @@ namespace unibox::gui {
         std::function<void(gui_resource_handle, void*, size_t, size_t)> write_buffer;
 
         std::function<gui_resource_handle(const std::any& vertexCode, const std::any& fragmentCode, ShaderLanguage lang)> create_shader;
-        std::function<void(gui_resource_handle, const std::string&, gui_resource_handle, size_t offset, size_t length)> bind_buffer_to_descriptor;
-        std::function<void(gui_resource_handle, const std::string&, gui_resource_handle)> bind_texture_to_descriptor;
-        std::function<void(gui_resource_handle, const std::string&, void*, size_t, size_t)> set_shader_variable;
 
         std::function<void(gui_resource_handle)> destroy_resource;
 

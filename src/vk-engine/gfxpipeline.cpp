@@ -13,6 +13,8 @@ GraphicsPipeline::GraphicsPipeline(VkDevice device, VkRenderPass renderPass) {
     handle = 0;
 
     blendEnable = false;
+
+    descriptorSetAllocate = true;
 }
 
 GraphicsPipeline::GraphicsPipeline() {
@@ -24,6 +26,8 @@ GraphicsPipeline::GraphicsPipeline() {
     handle = 0;
 
     blendEnable = false;
+
+    descriptorSetAllocate = true;
 }
 
 GraphicsPipeline::~GraphicsPipeline() {
@@ -34,6 +38,10 @@ GraphicsPipeline::~GraphicsPipeline() {
 
 void GraphicsPipeline::enableAlphaBlend() {
     blendEnable = true;
+}
+
+void GraphicsPipeline::setDescriptorAllocate(bool value) {
+    this->descriptorSetAllocate = value;
 }
 
 void GraphicsPipeline::addShader(Shader* shader) {
@@ -179,7 +187,7 @@ bool GraphicsPipeline::assemble(const VkExtent2D& swapChainExtent, VkDescriptorS
         if(descriptors[i].size() > 0) descriptorLayoutInfo.pBindings = descriptors[i].data();
         if(vkCreateDescriptorSetLayout(device, &descriptorLayoutInfo, 0, &descriptorLayout[i]) != VK_SUCCESS) return false;
         // Allocate descriptor set
-        descriptorSet[i] = descriptorSetAllocator(descriptorLayout[i]);
+        if(descriptorSetAllocate) descriptorSet[i] = descriptorSetAllocator(descriptorLayout[i]);
     }
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
@@ -229,7 +237,19 @@ bool GraphicsPipeline::assemble(const VkExtent2D& swapChainExtent, VkDescriptorS
     return result == VK_SUCCESS;
 }
 
+VkDescriptorSet GraphicsPipeline::allocateSet(int set) {
+    return Engine::getInstance()->allocate_descriptor_set(descriptorLayout[set]);
+}
+
 void GraphicsPipeline::bindBufferToDescriptor(int set, int binding, VkBuffer buffer, VkDescriptorType type, size_t offset, size_t length) {
+    bindBufferToDescriptor(descriptorSet[set], binding, buffer, type, offset, length);
+}
+
+void GraphicsPipeline::bindImageToDescriptor(int set, int binding, VkImageView view, VkSampler sampler, VkImageLayout layout, VkDescriptorType type) {
+    bindImageToDescriptor(descriptorSet[set], binding, view, sampler, layout, type);
+}
+
+void GraphicsPipeline::bindBufferToDescriptor(VkDescriptorSet set, int binding, VkBuffer buffer, VkDescriptorType type, size_t offset, size_t length) {
     VkDescriptorBufferInfo bufferInfo = {
         .buffer = buffer,
         .offset = offset,
@@ -238,7 +258,7 @@ void GraphicsPipeline::bindBufferToDescriptor(int set, int binding, VkBuffer buf
     VkWriteDescriptorSet writeInfo = {
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 
-        .dstSet = descriptorSet[set],
+        .dstSet = set,
         .dstBinding = binding,
 
         .descriptorCount = 1,
@@ -248,7 +268,7 @@ void GraphicsPipeline::bindBufferToDescriptor(int set, int binding, VkBuffer buf
     vkUpdateDescriptorSets(device, 1, &writeInfo, 0, 0);
 }
 
-void GraphicsPipeline::bindImageToDescriptor(int set, int binding, VkImageView view, VkSampler sampler, VkImageLayout layout, VkDescriptorType type) {
+void GraphicsPipeline::bindImageToDescriptor(VkDescriptorSet set, int binding, VkImageView view, VkSampler sampler, VkImageLayout layout, VkDescriptorType type) {
     VkDescriptorImageInfo imageInfo = {
         .sampler = sampler,
         .imageView = view,
@@ -257,7 +277,7 @@ void GraphicsPipeline::bindImageToDescriptor(int set, int binding, VkImageView v
     VkWriteDescriptorSet writeInfo = {
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 
-        .dstSet = descriptorSet[set],
+        .dstSet = set,
         .dstBinding = binding,
 
         .descriptorCount = 1,

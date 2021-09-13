@@ -31,7 +31,7 @@ namespace unibox::gui {
         GuiEngine& guiEngine;
         const RenderEngine& renderEngine;
     public:
-        GuiObject(GuiEngine& engine, int layer, double posX, double posY, double scaleX, double scaleY);
+        GuiObject(GuiEngine& engine, gui_resource_handle shader, int layer, double posX, double posY, double scaleX, double scaleY);
         ~GuiObject();
 
         int getLayer();
@@ -39,8 +39,8 @@ namespace unibox::gui {
 
         gui_resource_handle getShader();
         gui_resource_handle getMesh();
+        gui_resource_handle getRenderObject();
 
-        void setShader(gui_resource_handle shader);
         void setMesh(gui_resource_handle mesh);
 
         double getX();

@@ -29,12 +29,15 @@ namespace unibox {
         VkCompareOp compareOp;
 
         bool blendEnable;
+
+        bool descriptorSetAllocate;
     public:
         GraphicsPipeline(VkDevice device, VkRenderPass renderPass);
         GraphicsPipeline();
         ~GraphicsPipeline();
 
         void addShader(Shader* shader);
+        void setDescriptorAllocate(bool value);
 
         int addBinding(size_t stride, VkVertexInputRate rate);
         void addAttribute(int binding, int location, uint32_t offset, VkFormat format);
@@ -45,6 +48,10 @@ namespace unibox {
 
         void bindBufferToDescriptor(int set, int binding, VkBuffer buffer, VkDescriptorType type, size_t offset, size_t length);
         void bindImageToDescriptor(int set, int binding, VkImageView view, VkSampler sampler, VkImageLayout layout, VkDescriptorType type);
+
+        void bindBufferToDescriptor(VkDescriptorSet set, int binding, VkBuffer buffer, VkDescriptorType type, size_t offset, size_t length);
+        void bindImageToDescriptor(VkDescriptorSet set, int binding, VkImageView view, VkSampler sampler, VkImageLayout layout, VkDescriptorType type);
+        VkDescriptorSet allocateSet(int set);
 
         void enableAlphaBlend();
 

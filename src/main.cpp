@@ -37,7 +37,9 @@ int main(int argc, char** argv) {
     renderer.addRenderCallback([&guiEngine](double time) { guiEngine.render(time); });
 
     gui::gui_resource_handle tex = guiEngine.createTexture("resources/gui/textures/material_select_button_64.png");
-    gui::Image img = gui::Image(guiEngine, tex, 1280/2, 720/2, 64, 64);
+    gui::gui_resource_handle tex2 = guiEngine.createTexture("resources/gui/textures/material_select_button_hover_64.png");
+    gui::Image img = gui::Image(guiEngine, guiEngine.getDefaultShader(), tex, 1280/2, 720/2, 64, 64);
+    gui::Image img2 = gui::Image(guiEngine, guiEngine.getDefaultShader(), tex2, 1280/2+64, 720/2, 64, 64);
 
     float zoom = 600.0f;
     float dir = 0;//-0.1f;

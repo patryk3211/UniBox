@@ -35,13 +35,8 @@ GuiEngine::GuiEngine(const RenderEngine& renderEngine) {
 
     default_shader = renderEngine.create_shader(vcode, fcode, SPIRV);
 
-    float aspect = 1280.0/720.0;
-    glm::mat4 projection = glm::ortho(0.0f, 1280.0f, 0.0f, 720.0f, 10.0f, -10.0f);
-
-    //glm::mat4 transform = glm::scale(glm::translate(glm::mat4(1), glm::vec3(50, 50, 0)), glm::vec3(100, 100, 1));
-
+    glm::mat4 projection = glm::ortho(0.0f, (float)renderEngine.width, 0.0f, (float)renderEngine.height, 10.0f, -10.0f);
     renderEngine.set_shader_variable(default_shader, "matrices", &projection, 0, sizeof(projection));
-    //renderEngine.set_shader_variable(default_shader, "transformMatrix", &transform, 0, sizeof(transform));
 
     default_mesh = renderEngine.create_mesh();
 

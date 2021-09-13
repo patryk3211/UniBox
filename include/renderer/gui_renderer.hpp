@@ -64,6 +64,7 @@ namespace unibox {
             struct DescriptorInfo {
                 uint set;
                 uint binding;
+                size_t size;
                 VkDescriptorType type;
                 gui::gui_resource_handle boundBuffer;
                 size_t boundOffset;
@@ -72,16 +73,19 @@ namespace unibox {
             };
 
             GraphicsPipeline* pipeline;
+            std::list<DescriptorInfo> set0BufferCreate;
             std::unordered_map<std::string, DescriptorInfo> descriptors;
             std::unordered_map<std::string, uint> pushConstants;
             uint8_t* pushConstant;
             uint pushSizeVertex;
             uint pushSizeFragment;
+            VkDescriptorSet shaderSet;
         };
 
         struct RenderObject {
             Mesh* mesh;
             GuiShader* shader;
+            VkDescriptorSet objectSet;
         };
 
         struct GuiBuffer {

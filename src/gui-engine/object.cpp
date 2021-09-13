@@ -5,7 +5,7 @@
 
 using namespace unibox::gui;
 
-GuiObject::GuiObject(GuiEngine& engine, int layer, double posX, double posY, double scaleX, double scaleY) : guiEngine(engine), renderEngine(engine.getRenderEngine()) {
+GuiObject::GuiObject(GuiEngine& engine, gui_resource_handle shader, int layer, double posX, double posY, double scaleX, double scaleY) : guiEngine(engine), renderEngine(engine.getRenderEngine()) {
     this->layer = layer;
 
     this->posX = posX;
@@ -15,11 +15,10 @@ GuiObject::GuiObject(GuiEngine& engine, int layer, double posX, double posY, dou
     this->scaleY = scaleY;
 
     this->mesh = engine.getDefaultMesh();
-    this->shader = engine.getDefaultShader();
+    this->shader = shader;
 
-    renderObjectHandle = renderEngine.create_render_object();
+    renderObjectHandle = renderEngine.create_render_object(this->shader);
     renderEngine.attach_mesh(renderObjectHandle, mesh);
-    renderEngine.set_render_object_shader(renderObjectHandle, shader);
 
     handle = engine.addItem(this);
 
@@ -39,9 +38,8 @@ gui_resource_handle GuiObject::getMesh() {
     return mesh;
 }
 
-void GuiObject::setShader(gui_resource_handle shader) {
-    this->shader = shader;
-    renderEngine.set_render_object_shader(renderObjectHandle, shader);
+gui_resource_handle GuiObject::getRenderObject() {
+    return renderObjectHandle;
 }
 
 void GuiObject::setMesh(gui_resource_handle mesh) {
@@ -58,7 +56,7 @@ void GuiObject::setLayer(int layer) {
 }
 
 void GuiObject::render(double frameTime) {
-    renderEngine.set_shader_variable(shader, "transformMatrix", &transformMatrix, 0, sizeof(glm::mat4));
+    renderEngine.set_shader_variable(renderObjectHandle, "transformMatrix", &transformMatrix, 0, sizeof(glm::mat4));
     renderEngine.render_object(renderObjectHandle);
 }
 

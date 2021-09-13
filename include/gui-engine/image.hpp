@@ -5,7 +5,7 @@ namespace unibox::gui {
         gui_resource_handle tex;
 
     public:
-        Image(GuiEngine& engine, gui_resource_handle tex, double posX, double posY, double width, double height);
+        Image(GuiEngine& engine, gui_resource_handle shader, gui_resource_handle tex, double posX, double posY, double width, double height);
         ~Image();
 
         virtual void render(double frameTime);
