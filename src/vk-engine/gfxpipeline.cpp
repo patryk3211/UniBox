@@ -248,6 +248,25 @@ void GraphicsPipeline::bindBufferToDescriptor(int set, int binding, VkBuffer buf
     vkUpdateDescriptorSets(device, 1, &writeInfo, 0, 0);
 }
 
+void GraphicsPipeline::bindImageToDescriptor(int set, int binding, VkImageView view, VkSampler sampler, VkImageLayout layout, VkDescriptorType type) {
+    VkDescriptorImageInfo imageInfo = {
+        .sampler = sampler,
+        .imageView = view,
+        .imageLayout = layout
+    };
+    VkWriteDescriptorSet writeInfo = {
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+
+        .dstSet = descriptorSet[set],
+        .dstBinding = binding,
+
+        .descriptorCount = 1,
+        .descriptorType = type,
+        .pImageInfo = &imageInfo
+    };
+    vkUpdateDescriptorSets(device, 1, &writeInfo, 0, 0);
+}
+
 bool GraphicsPipeline::assemble(const VkExtent2D& swapChainExtent) {
     return assemble(swapChainExtent, [](VkDescriptorSetLayout layout) { return Engine::getInstance()->allocate_descriptor_set(layout); });
 }

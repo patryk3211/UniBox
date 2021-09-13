@@ -6,12 +6,13 @@
 
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <stb/stb_image.h>
 
-using namespace unibox;
+using namespace unibox::gui;
 
 #define DEFAULT_VERTEX_SHADER "shaders/gui/default/vertex.spv"
 #define DEFAULT_FRAGMENT_SHADER "shaders/gui/default/fragment.spv"
-gui_resource_handle h;
+
 GuiEngine::GuiEngine(const RenderEngine& renderEngine) {
     this->renderEngine = renderEngine;
     nextHandle = 1;
@@ -35,82 +36,108 @@ GuiEngine::GuiEngine(const RenderEngine& renderEngine) {
     default_shader = renderEngine.create_shader(vcode, fcode, SPIRV);
 
     float aspect = 1280.0/720.0;
-    glm::mat4 projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, 10.0f, -10.0f);
-    projection[1][0] = -projection[1][0];
-    projection[1][1] = -projection[1][1];
-    projection[1][2] = -projection[1][2];
-    projection[1][3] = -projection[1][3];
+    glm::mat4 projection = glm::ortho(0.0f, 1280.0f, 0.0f, 720.0f, 10.0f, -10.0f);
 
-    glm::mat4 transform = glm::translate(glm::mat4(1), glm::vec3(0, 0, 0));
+    //glm::mat4 transform = glm::scale(glm::translate(glm::mat4(1), glm::vec3(50, 50, 0)), glm::vec3(100, 100, 1));
 
     renderEngine.set_shader_variable(default_shader, "matrices", &projection, 0, sizeof(projection));
-    renderEngine.set_shader_variable(default_shader, "transformMatrix", &transform, 0, sizeof(transform));
+    //renderEngine.set_shader_variable(default_shader, "transformMatrix", &transform, 0, sizeof(transform));
 
     default_mesh = renderEngine.create_mesh();
 
     float data[] = {
-        -0.5, -0.5, 0.0,
-        -0.5,  0.5, 0.0,
-         0.5, -0.5, 0.0,
-        -0.5,  0.5, 0.0,
-         0.5,  0.5, 0.0,
-         0.5, -0.5, 0.0
+        -0.5, -0.5, 0.0,  0.0, 0.0,
+        -0.5,  0.5, 0.0,  0.0, 1.0,
+         0.5, -0.5, 0.0,  1.0, 0.0,
+        -0.5,  0.5, 0.0,  0.0, 1.0,
+         0.5,  0.5, 0.0,  1.0, 1.0,
+         0.5, -0.5, 0.0,  1.0, 0.0
     };
 
     std::vector<uint8_t> vec(sizeof(data));
     memcpy(vec.data(), data, sizeof(data));
     renderEngine.add_mesh_vertex_data(default_mesh, vec, 6);
 
-    gui_resource_handle ren = renderEngine.create_render_object();
-    renderEngine.attach_mesh(ren, default_mesh);
-    renderEngine.set_render_object_shader(ren, default_shader);
-
-    h = ren;
+    this->width = renderEngine.width;
+    this->height = renderEngine.height;
 }
 
 GuiEngine::~GuiEngine() {
 
 }
 
-gui_handle GuiEngine::addItem(const GuiObject& object) {
+uint GuiEngine::getWidth() {
+    return width;
+}
+
+uint GuiEngine::getHeight() {
+    return height;
+}
+
+gui_handle GuiEngine::addItem(GuiObject* object) {
     // TODO: [11.09.2021] Should propably check if the handle is actually available.
-    guiObjects.insert( { nextHandle, object } );
+    auto last = guiObjects.begin();
     gui_handle handle = nextHandle;
     nextHandle++;
+    for(auto iter = guiObjects.begin(); iter != guiObjects.end(); iter++) {
+        if((*iter)->getLayer() < object->getLayer()) {
+            auto ins = guiObjects.insert(iter, object);
+            mappings.insert({ handle, object });
+            return handle;
+        }
+        last = iter;
+    }
+    guiObjects.push_back(object);
+    mappings.insert({ handle, object });
     return handle;
 }
 
 void GuiEngine::removeItem(gui_handle handle) {
-    guiObjects.erase(handle);
+    auto map = mappings.find(handle);
+    if(map != mappings.end()) {
+        guiObjects.remove(map->second);
+        mappings.erase(handle);
+    }
 }
 
 void GuiEngine::render(double frameTime) {
-    for(auto& [handle, object] : guiObjects) object.render(frameTime);
-    renderEngine.render_object(h);
+    std::for_each(guiObjects.rbegin(), guiObjects.rend(), [frameTime](GuiObject* object) {
+        object->render(frameTime);
+    });
 }
 
-gui_resource_handle GuiEngine::createRenderObject() {
-    return renderEngine.create_render_object();
-}
-
-void GuiEngine::destroyRenderObject(gui_resource_handle handle) {
-    renderEngine.destroy_resource(handle);
+gui_resource_handle GuiEngine::createTexture(const std::string& filepath) {
+    int width, height, channels;
+    stbi_uc* pixels = stbi_load(filepath.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+    return renderEngine.create_texture(width, height, pixels, LINEAR, NEAREST);
 }
 
 void GuiEngine::onMouseClick(double x, double y, int button) {
-    for(auto& [handle, object] : guiObjects) {
-        if(x >= object.getX() && y >= object.getY() && x < object.getX()+object.getWidth() && y < object.getY()+object.getHeight()) {
-            object.mouseClick(x, y, button);
+    for(auto& object : guiObjects) {
+        if(x >= object->getX() && y >= object->getY() && x < object->getX()+object->getWidth() && y < object->getY()+object->getHeight()) {
+            object->mouseClick(x, y, button);
             break;
         }
     }
 }
 
 void GuiEngine::onMouseHover(double x, double y) {
-    for(auto& [handle, object] : guiObjects) {
-        if(x >= object.getX() && y >= object.getY() && x < object.getX()+object.getWidth() && y < object.getY()+object.getHeight()) {
-            object.mouseHover(x, y);
+    for(auto& object : guiObjects) {
+        if(x >= object->getX() && y >= object->getY() && x < object->getX()+object->getWidth() && y < object->getY()+object->getHeight()) {
+            object->mouseHover(x, y);
             break;
         }
     }
+}
+
+const RenderEngine& GuiEngine::getRenderEngine() {
+    return renderEngine;
+}
+
+gui_resource_handle GuiEngine::getDefaultMesh() {
+    return default_mesh;
+}
+
+gui_resource_handle GuiEngine::getDefaultShader() {
+    return default_shader;
 }

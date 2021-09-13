@@ -44,6 +44,7 @@ namespace unibox {
         void addDepthStencil(bool testEnable, bool writeEnable, VkCompareOp compareOp);
 
         void bindBufferToDescriptor(int set, int binding, VkBuffer buffer, VkDescriptorType type, size_t offset, size_t length);
+        void bindImageToDescriptor(int set, int binding, VkImageView view, VkSampler sampler, VkImageLayout layout, VkDescriptorType type);
 
         void enableAlphaBlend();
 

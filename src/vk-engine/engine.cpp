@@ -93,9 +93,14 @@ bool Engine::init(GLFWwindow* window) {
         return false;
     }
 
+    // Required device features.
+    VkPhysicalDeviceFeatures features;
+    features.samplerAnisotropy = VK_TRUE;
+
     PhysicalDeviceSelector selector { vkb_instance };
     auto phys_ret = selector.set_surface(surface)
                             .set_minimum_version(1, 0)
+                            .set_required_features(features)
                             .select();
     if(!phys_ret) {
         spdlog::error("Could not select a physical device.");
@@ -342,7 +347,8 @@ void Engine::draw() {
 
 VkDescriptorPool Engine::create_descriptor_pool() {
     VkDescriptorPoolSize poolSize[] = {
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 }
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 900 },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100 }
     };
     VkDescriptorPoolCreateInfo createInfo = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
@@ -450,6 +456,16 @@ VkQueue Engine::getQueue(QueueType type) {
     }
 }
 
+uint32_t Engine::getQueueIndex(QueueType type) {
+    switch(type) {
+        case GRAPHICS: return gfx_queue_index;
+        case PRESENT: return present_queue_index;
+        case COMPUTE: return compute_queue_index;
+        case TRANSFER: return transfer_queue_index;
+        default: return 0;
+    }
+}
+
 void Engine::transfer(VkBuffer src, VkBuffer dst, size_t length) {
     CommandBuffer* buffer = allocateBuffer(TRANSFER);
     VkFence fence;
@@ -468,4 +484,8 @@ void Engine::transfer(VkBuffer src, VkBuffer dst, size_t length) {
         vkWaitForFences(device, 1, &fence, VK_TRUE, 0xFFFFFFFF);
     }
     vkDestroyFence(device, fence, 0);
+}
+
+const VkPhysicalDeviceProperties& Engine::getProperties() {
+    return vkb_physDevice.properties;
 }

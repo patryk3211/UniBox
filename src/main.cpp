@@ -11,6 +11,7 @@
 
 #include <gui-engine/engine.hpp>
 #include <renderer/gui_renderer.hpp>
+#include <gui-engine/image.hpp>
 
 #include <chrono>
 #include <future>
@@ -31,9 +32,12 @@ int main(int argc, char** argv) {
     if(!window.init()) return -1;
     spdlog::info("Window created succesfully.");
 
-    GuiRenderer renderer = GuiRenderer();
-    GuiEngine guiEngine = GuiEngine(renderer.getRenderEngineFunctions());
+    GuiRenderer renderer = GuiRenderer(1280, 720);
+    gui::GuiEngine guiEngine = gui::GuiEngine(renderer.getRenderEngineFunctions());
     renderer.addRenderCallback([&guiEngine](double time) { guiEngine.render(time); });
+
+    gui::gui_resource_handle tex = guiEngine.createTexture("resources/gui/textures/material_select_button_64.png");
+    gui::Image img = gui::Image(guiEngine, tex, 1280/2, 720/2, 64, 64);
 
     float zoom = 600.0f;
     float dir = 0;//-0.1f;

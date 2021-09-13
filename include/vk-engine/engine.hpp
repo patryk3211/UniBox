@@ -109,6 +109,9 @@ namespace unibox {
         void freePool(CommandPool* pool);
 
         VkQueue getQueue(QueueType type);
+        uint32_t getQueueIndex(QueueType type);
+
+        const VkPhysicalDeviceProperties& getProperties();
 
         static Engine* getInstance() { return instance; }
 

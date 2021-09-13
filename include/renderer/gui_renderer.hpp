@@ -3,6 +3,7 @@
 #include <gui-engine/engine.hpp>
 #include <vk-engine/engine.hpp>
 #include <vk-engine/buffer.hpp>
+#include <vk-engine/image.hpp>
 
 #include <unordered_map>
 #include <queue>
@@ -12,7 +13,7 @@ namespace unibox {
     class GuiRenderer {
         static GuiRenderer* instance;
 
-        RenderEngine functions;
+        gui::RenderEngine functions;
 
         struct Resource {
             const std::type_info& type_info;
@@ -55,12 +56,16 @@ namespace unibox {
             uint vertexCount;
         };
 
+        struct Texture {
+            Image* image;
+        };
+
         struct GuiShader {
             struct DescriptorInfo {
                 uint set;
                 uint binding;
                 VkDescriptorType type;
-                gui_resource_handle boundBuffer;
+                gui::gui_resource_handle boundBuffer;
                 size_t boundOffset;
                 size_t boundLength;
                 bool isDefault;
@@ -77,26 +82,30 @@ namespace unibox {
         struct RenderObject {
             Mesh* mesh;
             GuiShader* shader;
-            int layer;
         };
 
         struct GuiBuffer {
             Buffer* buffer;
         };
 
+        struct RenderingState {
+            GuiShader*& currentShader;
+        };
+
         const std::type_info& RENDER_OBJECT = typeid(RenderObject);
         const std::type_info& MESH = typeid(Mesh);
         const std::type_info& SHADER = typeid(GuiShader);
         const std::type_info& BUFFER = typeid(GuiBuffer);
+        const std::type_info& TEXTURE = typeid(Texture);
 
         std::list<std::function<void(double)>> renderCallbacks;
 
-        gui_resource_handle nextHandle;
-        std::unordered_map<gui_resource_handle, Resource*> resources;
+        gui::gui_resource_handle nextHandle;
+        std::unordered_map<gui::gui_resource_handle, Resource*> resources;
 
-        std::list<RenderObject*> objectsToRender;
+        std::queue<std::function<void(RenderingState&, VkCommandBuffer cmd)>> renderActions;
 
-        template<typename T> std::optional<T*> getResource(gui_resource_handle handle) {
+        template<typename T> std::optional<T*> getResource(gui::gui_resource_handle handle) {
             auto resource = resources.find(handle);
             if(resource == resources.end() || resource->second->type() != typeid(T)) return std::nullopt;
             std::optional<T*> opt = resource->second->get<T>();
@@ -104,12 +113,12 @@ namespace unibox {
             return std::nullopt;
         }
     public:
-        GuiRenderer();
+        GuiRenderer(uint width, uint height);
         ~GuiRenderer();
 
         void render(VkCommandBuffer cmd);
 
-        const RenderEngine& getRenderEngineFunctions();
+        const gui::RenderEngine& getRenderEngineFunctions();
         void addRenderCallback(std::function<void(double)> callback);
 
         static GuiRenderer* getInstance();
