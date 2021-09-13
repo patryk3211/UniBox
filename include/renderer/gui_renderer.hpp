@@ -72,8 +72,20 @@ namespace unibox {
                 bool isDefault;
             };
 
+            struct DescriptorMemberInfo {
+                DescriptorInfo* descriptor;
+                size_t offset;
+            };
+
+            struct BufferCreateInfo {
+                uint binding;
+                size_t size;
+                DescriptorInfo* info;
+            };
+
             GraphicsPipeline* pipeline;
-            std::list<DescriptorInfo> set0BufferCreate;
+            std::list<BufferCreateInfo> set0BufferCreate;
+            std::unordered_map<std::string, DescriptorMemberInfo> descriptorMembers;
             std::unordered_map<std::string, DescriptorInfo> descriptors;
             std::unordered_map<std::string, uint> pushConstants;
             uint8_t* pushConstant;

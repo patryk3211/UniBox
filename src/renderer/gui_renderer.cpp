@@ -37,10 +37,10 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
             nextHandle++;
             resources.insert({ handle, res });
 
-            desc.isDefault = true;
-            desc.boundBuffer = handle;
-            desc.boundOffset = 0;
-            desc.boundLength = desc.size;
+            desc.info->isDefault = true;
+            desc.info->boundBuffer = handle;
+            desc.info->boundOffset = 0;
+            desc.info->boundLength = desc.size;
 
             object.shader->pipeline->bindBufferToDescriptor(object.objectSet, desc.binding, buffer->getHandle(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, desc.size);
         }
@@ -196,7 +196,14 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
                     .size = descriptorBindings[i]->block.padded_size,
                     .type = static_cast<VkDescriptorType>(descriptorBindings[i]->descriptor_type)
                 };
-                auto pair = shaderResource.descriptors.insert({ descriptorBindings[i]->name, info }); // TODO: Change it so that it adds individual fields instead of the whole block.
+                auto pair = shaderResource.descriptors.insert({ descriptorBindings[i]->name, info });
+                for(int j = 0; j < descriptorBindings[i]->block.member_count; j++) {
+                    auto& member = descriptorBindings[i]->block.members[j];
+                    shaderResource.descriptorMembers.insert({ member.name, {
+                        &pair.first->second,
+                        member.absolute_offset
+                    }});
+                }
 
                 if(descriptorBindings[i]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
                     if(descriptorBindings[i]->set == 1) {
@@ -207,11 +214,10 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
                             &pair.first->second
                         });
                     } else if(descriptorBindings[i]->set == 0) {
-                        GuiShader::DescriptorInfo descInf = {};
-                        descInf.set = 0;
+                        GuiShader::BufferCreateInfo descInf = {};
                         descInf.size = descriptorBindings[i]->block.padded_size;
                         descInf.binding = descriptorBindings[i]->binding;
-                        descInf.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                        descInf.info = &pair.first->second;
                         shaderResource.set0BufferCreate.push_back(descInf);
                     }
                 }
@@ -247,6 +253,13 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
                     .type = static_cast<VkDescriptorType>(descriptorBindings[i]->descriptor_type)
                 };
                 auto pair = shaderResource.descriptors.insert({ descriptorBindings[i]->name, info });
+                for(int j = 0; j < descriptorBindings[i]->block.member_count; j++) {
+                    auto& member = descriptorBindings[i]->block.members[j];
+                    shaderResource.descriptorMembers.insert({ member.name, {
+                        &pair.first->second,
+                        member.absolute_offset
+                    }});
+                }
 
                 if(descriptorBindings[i]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
                     if(descriptorBindings[i]->set == 1) {
@@ -257,11 +270,10 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
                             &pair.first->second
                         });
                     } else if(descriptorBindings[i]->set == 0) {
-                        GuiShader::DescriptorInfo descInf = {};
-                        descInf.set = 0;
+                        GuiShader::BufferCreateInfo descInf = {};
                         descInf.size = descriptorBindings[i]->block.padded_size;
                         descInf.binding = descriptorBindings[i]->binding;
-                        descInf.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                        descInf.info = &pair.first->second;
                         shaderResource.set0BufferCreate.push_back(descInf);
                     }
                 }
@@ -375,23 +387,33 @@ GuiRenderer::GuiRenderer(uint width, uint height) {
             }
         }
         
+        GuiShader::DescriptorInfo* descInfo;
 
-        auto desc = shdr->descriptors.find(descName);
-        if(desc == shdr->descriptors.end()) {
+        auto desc = shdr->descriptorMembers.find(descName);
+        if(desc == shdr->descriptorMembers.end()) {
             // Check push constants.
             auto cons = shdr->pushConstants.find(descName);
-            if(cons == shdr->pushConstants.end()) return;
+            if(cons != shdr->pushConstants.end()) {
+                uint8_t* dataCpy = new uint8_t[length];
+                memcpy(dataCpy, data, length);
+                renderActions.push([dataCpy, cons, offset, length, shdr](RenderingState state, VkCommandBuffer cmd) {
+                    memcpy(shdr->pushConstant+cons->second+offset, dataCpy, length);
+                });
+                return;
+            } else {
+                // Check uniform block names.
+                auto descBlck = shdr->descriptors.find(descName);
+                if(descBlck == shdr->descriptors.end()) return;
 
-            uint8_t* dataCpy = new uint8_t[length];
-            memcpy(dataCpy, data, length);
-            renderActions.push([dataCpy, cons, offset, length, shdr](RenderingState state, VkCommandBuffer cmd) {
-                memcpy(shdr->pushConstant+cons->second+offset, dataCpy, length);
-            });
-            return;
+                descInfo = &descBlck->second;
+            }
+        } else {
+            descInfo = desc->second.descriptor;
+            offset += desc->second.offset;
         }
-        if(desc->second.boundBuffer == 0) return;
+        if(descInfo->boundBuffer == 0) return;
 
-        auto buffer = getResource<GuiBuffer>(desc->second.boundBuffer);
+        auto buffer = getResource<GuiBuffer>(descInfo->boundBuffer);
         if(buffer.has_value()) {
             Buffer* bfr = buffer.value()->buffer;
             uint8_t* dataCpy = new uint8_t[length];
