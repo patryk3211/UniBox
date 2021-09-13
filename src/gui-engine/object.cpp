@@ -55,12 +55,11 @@ void GuiObject::setLayer(int layer) {
     this->layer = layer;
 }
 
-void GuiObject::render(double frameTime) {
+void GuiObject::render(double frameTime, double x, double y) {
     renderEngine.set_shader_variable(renderObjectHandle, "transformMatrix", &transformMatrix, 0, sizeof(glm::mat4));
     renderEngine.render_object(renderObjectHandle);
 }
 
-void GuiObject::mouseHover(double x, double y) { }
 void GuiObject::mouseClick(double x, double y, int button) { }
 
 double GuiObject::getX() {

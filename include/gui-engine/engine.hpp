@@ -67,10 +67,9 @@ namespace unibox::gui {
         gui_handle addItem(GuiObject* object);
         void removeItem(gui_handle handle);
 
-        void render(double frameTime);
+        void render(double frameTime, double x, double y);
 
         void onMouseClick(double x, double y, int button);
-        void onMouseHover(double x, double y);
 
         gui_resource_handle getDefaultMesh();
         gui_resource_handle getDefaultShader();

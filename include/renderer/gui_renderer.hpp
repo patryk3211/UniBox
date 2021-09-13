@@ -4,6 +4,7 @@
 #include <vk-engine/engine.hpp>
 #include <vk-engine/buffer.hpp>
 #include <vk-engine/image.hpp>
+#include <vk-engine/window.hpp>
 
 #include <unordered_map>
 #include <queue>
@@ -12,6 +13,8 @@
 namespace unibox {
     class GuiRenderer {
         static GuiRenderer* instance;
+
+        Window& window;
 
         gui::RenderEngine functions;
 
@@ -114,7 +117,7 @@ namespace unibox {
         const std::type_info& BUFFER = typeid(GuiBuffer);
         const std::type_info& TEXTURE = typeid(Texture);
 
-        std::list<std::function<void(double)>> renderCallbacks;
+        std::list<std::function<void(double, double, double)>> renderCallbacks;
 
         gui::gui_resource_handle nextHandle;
         std::unordered_map<gui::gui_resource_handle, Resource*> resources;
@@ -129,13 +132,13 @@ namespace unibox {
             return std::nullopt;
         }
     public:
-        GuiRenderer(uint width, uint height);
+        GuiRenderer(uint width, uint height, Window& window);
         ~GuiRenderer();
 
         void render(VkCommandBuffer cmd);
 
         const gui::RenderEngine& getRenderEngineFunctions();
-        void addRenderCallback(std::function<void(double)> callback);
+        void addRenderCallback(std::function<void(double, double, double)> callback);
 
         static GuiRenderer* getInstance();
     };

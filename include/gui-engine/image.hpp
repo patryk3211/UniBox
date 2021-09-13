@@ -8,6 +8,6 @@ namespace unibox::gui {
         Image(GuiEngine& engine, gui_resource_handle shader, gui_resource_handle tex, double posX, double posY, double width, double height);
         ~Image();
 
-        virtual void render(double frameTime);
+        virtual void render(double frameTime, double x, double y);
     };
 }

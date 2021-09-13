@@ -13,7 +13,7 @@ Image::~Image() {
 
 }
 
-void Image::render(double frameTime) {
+void Image::render(double frameTime, double x, double y) {
     renderEngine.bind_texture_to_descriptor(getRenderObject(), "texture0", tex);
-    GuiObject::render(frameTime);
+    GuiObject::render(frameTime, x, y);
 }

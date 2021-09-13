@@ -53,9 +53,8 @@ namespace unibox::gui {
         void setWidth(double value);
         void setHeight(double value);
 
-        virtual void render(double frameTime);
+        virtual void render(double frameTime, double x, double y);
 
-        virtual void mouseHover(double x, double y);
         virtual void mouseClick(double x, double y, int button);
 
         bool operator==(const GuiObject& other);

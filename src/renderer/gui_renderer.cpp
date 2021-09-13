@@ -12,7 +12,7 @@ using namespace unibox::gui;
 
 GuiRenderer* GuiRenderer::instance = 0;
 
-GuiRenderer::GuiRenderer(uint width, uint height) {
+GuiRenderer::GuiRenderer(uint width, uint height, Window& window) : window(window) {
     nextHandle = 1;
 
     functions.width = width;
@@ -555,7 +555,8 @@ GuiRenderer::~GuiRenderer() {
 void GuiRenderer::render(VkCommandBuffer cmd) {
     bool finished = false;
     std::async(std::launch::async, [&](){
-        for(auto& callback : renderCallbacks) callback(1.667);
+        glm::vec2 cursor = window.getCursorPos();
+        for(auto& callback : renderCallbacks) callback(1.667, cursor.x, cursor.y);
         finished = true;
     });
 
@@ -580,6 +581,6 @@ const RenderEngine& GuiRenderer::getRenderEngineFunctions() {
     return functions;
 }
 
-void GuiRenderer::addRenderCallback(std::function<void(double)> callback) {
+void GuiRenderer::addRenderCallback(std::function<void(double, double, double)> callback) {
     renderCallbacks.push_back(callback);
 }

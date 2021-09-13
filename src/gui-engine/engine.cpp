@@ -95,9 +95,9 @@ void GuiEngine::removeItem(gui_handle handle) {
     }
 }
 
-void GuiEngine::render(double frameTime) {
-    std::for_each(guiObjects.rbegin(), guiObjects.rend(), [frameTime](GuiObject* object) {
-        object->render(frameTime);
+void GuiEngine::render(double frameTime, double x, double y) {
+    std::for_each(guiObjects.rbegin(), guiObjects.rend(), [frameTime, x, y](GuiObject* object) {
+        object->render(frameTime, x, y);
     });
 }
 
@@ -111,15 +111,6 @@ void GuiEngine::onMouseClick(double x, double y, int button) {
     for(auto& object : guiObjects) {
         if(x >= object->getX() && y >= object->getY() && x < object->getX()+object->getWidth() && y < object->getY()+object->getHeight()) {
             object->mouseClick(x, y, button);
-            break;
-        }
-    }
-}
-
-void GuiEngine::onMouseHover(double x, double y) {
-    for(auto& object : guiObjects) {
-        if(x >= object->getX() && y >= object->getY() && x < object->getX()+object->getWidth() && y < object->getY()+object->getHeight()) {
-            object->mouseHover(x, y);
             break;
         }
     }

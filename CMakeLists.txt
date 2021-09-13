@@ -29,6 +29,7 @@ set(SOURCES src/main.cpp
             src/gui-engine/engine.cpp
             src/gui-engine/object.cpp
             src/gui-engine/image.cpp
+            src/gui-engine/button.cpp
             src/spirv_reflect.c
             src/stb/stb_image.c)
 
