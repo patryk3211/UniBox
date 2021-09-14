@@ -28,6 +28,7 @@ namespace unibox::gui {
 
         virtual void render(double frameTime, double x, double y);
 
-        virtual void mouseClick(double x, double y, int button);
+        virtual void mouseDown(double x, double y, int button);
+        virtual void mouseUp(double x, double y, int button);
     };
 }

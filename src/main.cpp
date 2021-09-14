@@ -35,6 +35,8 @@ int main(int argc, char** argv) {
     GuiRenderer renderer = GuiRenderer(1280, 720, window);
     gui::GuiEngine guiEngine = gui::GuiEngine(renderer.getRenderEngineFunctions());
     renderer.addRenderCallback([&guiEngine](double time, double x, double y) { guiEngine.render(time, x, y); });
+    window.addMouseDownCallback([&guiEngine](double x, double y, int b) { guiEngine.onMouseDown(x, y, b); });
+    window.addMouseUpCallback([&guiEngine](double x, double y, int b) { guiEngine.onMouseUp(x, y, b); });
 
     gui::gui_resource_handle tex = guiEngine.createTexture("resources/gui/textures/material_select_button_64.png");
     gui::gui_resource_handle tex2 = guiEngine.createTexture("resources/gui/textures/material_select_button_hover_64.png");

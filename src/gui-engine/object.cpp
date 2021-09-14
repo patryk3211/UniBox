@@ -60,7 +60,8 @@ void GuiObject::render(double frameTime, double x, double y) {
     renderEngine.render_object(renderObjectHandle);
 }
 
-void GuiObject::mouseClick(double x, double y, int button) { }
+void GuiObject::mouseDown(double x, double y, int button) { }
+void GuiObject::mouseUp(double x, double y, int button) { }
 
 double GuiObject::getX() {
     return posX;
@@ -104,4 +105,8 @@ void GuiObject::rebuildMatrix() {
 
 bool GuiObject::operator==(const GuiObject& other) {
     return handle == other.handle;
+}
+
+bool GuiObject::isInside(double x, double y) {
+    return x >= posX-scaleX/2 && y >= posY-scaleY/2 && x <= posX+scaleX/2 && y <= posY+scaleY;
 }
