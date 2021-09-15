@@ -11,7 +11,7 @@
 
 #include <gui-engine/engine.hpp>
 #include <renderer/gui_renderer.hpp>
-#include <gui-engine/button.hpp>
+#include <guis/element_bar.hpp>
 
 #include <chrono>
 #include <future>
@@ -40,9 +40,8 @@ int main(int argc, char** argv) {
 
     gui::gui_resource_handle tex = guiEngine.createTexture("resources/gui/textures/material_select_button_64.png");
     gui::gui_resource_handle tex2 = guiEngine.createTexture("resources/gui/textures/material_select_button_hover_64.png");
-    /*gui::Image img = gui::Image(guiEngine, guiEngine.getDefaultShader(), tex, 1280/2, 720/2, 64, 64);
-    gui::Image img2 = gui::Image(guiEngine, guiEngine.getDefaultShader(), tex2, 1280/2+64, 720/2, 64, 64);*/
-    gui::Button but = gui::Button(guiEngine, guiEngine.getDefaultShader(), tex, tex2, tex, 1280/2, 720/2, 64, 64);
+    ElementBar bar = ElementBar(guiEngine);
+    //gui::Button but = gui::Button(guiEngine, guiEngine.getShader("default_textured_shader"), tex, tex2, tex, 1280/2, 720/2, 64, 64);
 
     float zoom = 600.0f;
     float dir = 0;//-0.1f;

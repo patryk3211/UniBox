@@ -10,33 +10,16 @@
 
 using namespace unibox::gui;
 
-#define DEFAULT_VERTEX_SHADER "shaders/gui/default/vertex.spv"
-#define DEFAULT_FRAGMENT_SHADER "shaders/gui/default/fragment.spv"
-
 GuiEngine::GuiEngine(const RenderEngine& renderEngine) {
     this->renderEngine = renderEngine;
     nextHandle = 1;
 
-    std::ifstream vs(DEFAULT_VERTEX_SHADER, std::ios::binary | std::ios::ate);
-    std::ifstream fs(DEFAULT_FRAGMENT_SHADER, std::ios::binary | std::ios::ate);
-    if(!vs.is_open() || !fs.is_open()) return;
-
-    size_t lenV = vs.tellg();
-    size_t lenF = fs.tellg();
-
-    vs.seekg(0);
-    fs.seekg(0);
-
-    std::vector<uint8_t> vcode(lenV);
-    std::vector<uint8_t> fcode(lenF);
-
-    vs.read((char*)vcode.data(), lenV);
-    fs.read((char*)fcode.data(), lenF);
-
-    default_shader = renderEngine.create_shader(vcode, fcode, SPIRV);
+    gui_resource_handle shader = createShader("shaders/gui/texture/vertex.spv", "shaders/gui/texture/fragment.spv", SPIRV, "default_textured_shader");
+    gui_resource_handle shader2 = createShader("shaders/gui/color/vertex.spv", "shaders/gui/color/fragment.spv", SPIRV, "default_colored_shader");
 
     glm::mat4 projection = glm::ortho(0.0f, (float)renderEngine.width, 0.0f, (float)renderEngine.height, 10.0f, -10.0f);
-    renderEngine.set_shader_variable(default_shader, "projectMatrix", &projection, 0, sizeof(projection));
+    renderEngine.set_shader_variable(shader, "projectMatrix", &projection, 0, sizeof(projection));
+    renderEngine.set_shader_variable(shader2, "projectMatrix", &projection, 0, sizeof(projection));
 
     default_mesh = renderEngine.create_mesh();
 
@@ -95,6 +78,34 @@ void GuiEngine::removeItem(gui_handle handle) {
     }
 }
 
+gui_resource_handle GuiEngine::createShader(const std::string& vertex, const std::string& fragment, ShaderLanguage lang, const std::string& registryName) {
+    std::ifstream vs(vertex, std::ios::binary | std::ios::ate);
+    std::ifstream fs(fragment, std::ios::binary | std::ios::ate);
+    if(!vs.is_open() || !fs.is_open()) return 0;
+
+    size_t lenV = vs.tellg();
+    size_t lenF = fs.tellg();
+
+    vs.seekg(0);
+    fs.seekg(0);
+
+    std::vector<uint8_t> vcode(lenV);
+    std::vector<uint8_t> fcode(lenF);
+
+    vs.read((char*)vcode.data(), lenV);
+    fs.read((char*)fcode.data(), lenF);
+
+    gui_resource_handle handle = renderEngine.create_shader(vcode, fcode, lang);
+    shaders.insert({ registryName, handle });
+    return handle;
+}
+
+gui_resource_handle GuiEngine::getShader(const std::string& shaderName) {
+    auto res = shaders.find(shaderName);
+    if(res == shaders.end()) return 0;
+    return res->second;
+}
+
 void GuiEngine::render(double frameTime, double x, double y) {
     std::for_each(guiObjects.rbegin(), guiObjects.rend(), [frameTime, x, y](GuiObject* object) {
         object->render(frameTime, x, y);
@@ -131,8 +142,4 @@ const RenderEngine& GuiEngine::getRenderEngine() {
 
 gui_resource_handle GuiEngine::getDefaultMesh() {
     return default_mesh;
-}
-
-gui_resource_handle GuiEngine::getDefaultShader() {
-    return default_shader;
 }

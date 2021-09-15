@@ -54,7 +54,8 @@ namespace unibox::gui {
         std::list<GuiObject*> guiObjects;
         std::unordered_map<gui_handle, GuiObject*> mappings;
 
-        gui_resource_handle default_shader;
+        std::unordered_map<std::string, gui_resource_handle> shaders;
+
         gui_resource_handle default_mesh;
 
         uint width, height;
@@ -63,6 +64,9 @@ namespace unibox::gui {
         ~GuiEngine();
 
         gui_resource_handle createTexture(const std::string& filepath);
+
+        gui_resource_handle createShader(const std::string& vertex, const std::string& fragment, ShaderLanguage lang, const std::string& registryName);
+        gui_resource_handle getShader(const std::string& shaderName);
 
         gui_handle addItem(GuiObject* object);
         void removeItem(gui_handle handle);
@@ -73,7 +77,6 @@ namespace unibox::gui {
         void onMouseUp(double x, double y, int button);
 
         gui_resource_handle getDefaultMesh();
-        gui_resource_handle getDefaultShader();
 
         const RenderEngine& getRenderEngine();
 

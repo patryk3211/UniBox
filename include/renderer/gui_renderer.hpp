@@ -89,7 +89,7 @@ namespace unibox {
             GraphicsPipeline* pipeline;
             std::list<BufferCreateInfo> set0BufferCreate;
             std::unordered_map<std::string, DescriptorMemberInfo> descriptorMembers;
-            std::unordered_map<std::string, DescriptorInfo> descriptors;
+            std::unordered_map<std::string, DescriptorInfo*> descriptors;
             std::unordered_map<std::string, uint> pushConstants;
             uint8_t* pushConstant;
             uint pushSizeVertex;

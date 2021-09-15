@@ -13,6 +13,10 @@ glslc default/default.frag -o $OUTPUT/shaders/default/fragment.spv
 cp compute/meshGenerator.cl $OUTPUT/shaders/compute/meshGenerator.cl
 cp compute/simulator.cl $OUTPUT/shaders/compute/simulator.cl
 
-mkdir -p $OUTPUT/shaders/gui/default
-glslc gui/default/default.vert -o $OUTPUT/shaders/gui/default/vertex.spv
-glslc gui/default/default.frag -o $OUTPUT/shaders/gui/default/fragment.spv
+mkdir -p $OUTPUT/shaders/gui/texture
+mkdir -p $OUTPUT/shaders/gui/color
+glslc gui/texture/texture.vert -o $OUTPUT/shaders/gui/texture/vertex.spv
+glslc gui/texture/texture.frag -o $OUTPUT/shaders/gui/texture/fragment.spv
+
+glslc gui/color/color.vert -o $OUTPUT/shaders/gui/color/vertex.spv
+glslc gui/color/color.frag -o $OUTPUT/shaders/gui/color/fragment.spv

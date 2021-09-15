@@ -80,7 +80,7 @@ GuiRenderer::GuiRenderer(uint width, uint height, Window& window) : window(windo
                 vkCmdBindVertexBuffers(cmd, 0, 1, &renderObject->mesh->vertexBuffer->getHandle(), offsets);
 
                 if(renderObject->shader->pushSizeVertex > 0) vkCmdPushConstants(cmd, state.currentShader->pipeline->getLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, renderObject->shader->pushSizeVertex, renderObject->shader->pushConstant);
-                if(renderObject->shader->pushSizeFragment > 0) vkCmdPushConstants(cmd, state.currentShader->pipeline->getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, renderObject->shader->pushSizeVertex, renderObject->shader->pushSizeFragment, renderObject->shader->pushConstant);
+                if(renderObject->shader->pushSizeFragment > 0) vkCmdPushConstants(cmd, state.currentShader->pipeline->getLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, renderObject->shader->pushSizeVertex, renderObject->shader->pushSizeFragment, renderObject->shader->pushConstant+renderObject->shader->pushSizeVertex);
 
                 if(renderObject->mesh->indexBuffer != 0) {
                     // Indexed draw
@@ -196,13 +196,15 @@ GuiRenderer::GuiRenderer(uint width, uint height, Window& window) : window(windo
                     .size = descriptorBindings[i]->block.padded_size,
                     .type = static_cast<VkDescriptorType>(descriptorBindings[i]->descriptor_type)
                 };
-                auto pair = shaderResource.descriptors.insert({ descriptorBindings[i]->name, info });
+                GuiShader::DescriptorInfo* infoPtr = new GuiShader::DescriptorInfo(info);
+                auto pair = shaderResource.descriptors.insert({ descriptorBindings[i]->name, infoPtr });
                 for(int j = 0; j < descriptorBindings[i]->block.member_count; j++) {
                     auto& member = descriptorBindings[i]->block.members[j];
-                    shaderResource.descriptorMembers.insert({ member.name, {
-                        &pair.first->second,
+                    GuiShader::DescriptorMemberInfo mem = {
+                        infoPtr,
                         member.absolute_offset
-                    }});
+                    };
+                    shaderResource.descriptorMembers.insert({ member.name, mem });
                 }
 
                 if(descriptorBindings[i]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
@@ -211,13 +213,13 @@ GuiRenderer::GuiRenderer(uint width, uint height, Window& window) : window(windo
                             descriptorBindings[i]->set,
                             descriptorBindings[i]->binding,
                             descriptorBindings[i]->block.padded_size,
-                            &pair.first->second
+                            infoPtr
                         });
                     } else if(descriptorBindings[i]->set == 0) {
                         GuiShader::BufferCreateInfo descInf = {};
                         descInf.size = descriptorBindings[i]->block.padded_size;
                         descInf.binding = descriptorBindings[i]->binding;
-                        descInf.info = &pair.first->second;
+                        descInf.info = infoPtr;
                         shaderResource.set0BufferCreate.push_back(descInf);
                     }
                 }
@@ -231,8 +233,8 @@ GuiRenderer::GuiRenderer(uint width, uint height, Window& window) : window(windo
             for(int i = 0; i < pushCount; i++) {
                 pipeline->addPushConstant(pushOffset, pushConstants[i]->size, VK_SHADER_STAGE_VERTEX_BIT);
                 for(int j = 0; j < pushConstants[i]->member_count; j++) 
-                    shaderResource.pushConstants.insert({ pushConstants[i]->members[j].name, pushOffset });
-                pushOffset += pushConstants[i]->size;
+                    shaderResource.pushConstants.insert({ pushConstants[i]->members[j].name, pushOffset+pushConstants[i]->members[j].absolute_offset });
+                pushOffset += pushConstants[i]->padded_size;
             }
         }
         shaderResource.pushSizeVertex = pushOffset;
@@ -252,13 +254,15 @@ GuiRenderer::GuiRenderer(uint width, uint height, Window& window) : window(windo
                     .size = descriptorBindings[i]->block.padded_size,
                     .type = static_cast<VkDescriptorType>(descriptorBindings[i]->descriptor_type)
                 };
-                auto pair = shaderResource.descriptors.insert({ descriptorBindings[i]->name, info });
+                GuiShader::DescriptorInfo* infoPtr = new GuiShader::DescriptorInfo(info);
+                auto pair = shaderResource.descriptors.insert({ descriptorBindings[i]->name, infoPtr });
                 for(int j = 0; j < descriptorBindings[i]->block.member_count; j++) {
                     auto& member = descriptorBindings[i]->block.members[j];
-                    shaderResource.descriptorMembers.insert({ member.name, {
-                        &pair.first->second,
+                    GuiShader::DescriptorMemberInfo mem = {
+                        infoPtr,
                         member.absolute_offset
-                    }});
+                    };
+                    shaderResource.descriptorMembers.insert({ member.name, mem });
                 }
 
                 if(descriptorBindings[i]->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
@@ -267,13 +271,13 @@ GuiRenderer::GuiRenderer(uint width, uint height, Window& window) : window(windo
                             descriptorBindings[i]->set,
                             descriptorBindings[i]->binding,
                             descriptorBindings[i]->block.padded_size,
-                            &pair.first->second
+                            infoPtr
                         });
                     } else if(descriptorBindings[i]->set == 0) {
                         GuiShader::BufferCreateInfo descInf = {};
                         descInf.size = descriptorBindings[i]->block.padded_size;
                         descInf.binding = descriptorBindings[i]->binding;
-                        descInf.info = &pair.first->second;
+                        descInf.info = infoPtr;
                         shaderResource.set0BufferCreate.push_back(descInf);
                     }
                 }
@@ -287,8 +291,8 @@ GuiRenderer::GuiRenderer(uint width, uint height, Window& window) : window(windo
             for(int i = 0; i < pushCount; i++) {
                 pipeline->addPushConstant(pushOffset, pushConstants[i]->size, VK_SHADER_STAGE_FRAGMENT_BIT);
                 for(int j = 0; j < pushConstants[i]->member_count; j++) 
-                    shaderResource.pushConstants.insert({ pushConstants[i]->members[j].name, pushOffset });
-                pushOffset += pushConstants[i]->size;
+                    shaderResource.pushConstants.insert({ pushConstants[i]->members[j].name, pushOffset+pushConstants[i]->members[j].absolute_offset });
+                pushOffset += pushConstants[i]->padded_size;
             }
         }
         shaderResource.pushSizeFragment = pushOffset-shaderResource.pushSizeVertex;
@@ -332,7 +336,10 @@ GuiRenderer::GuiRenderer(uint width, uint height, Window& window) : window(windo
 
         Resource* resource = new Resource(shaderResource, [](Resource& value) { 
             auto opt = value.get<GuiShader>();
-            if(opt.has_value()) delete opt.value()->pipeline;
+            if(opt.has_value()) {
+                delete opt.value()->pipeline;
+                for(auto& [name, desc] : opt.value()->descriptors) delete desc;
+            }
         });
         gui_resource_handle handle = nextHandle;
         resources.insert({ handle, resource });
@@ -362,13 +369,13 @@ GuiRenderer::GuiRenderer(uint width, uint height, Window& window) : window(windo
 
         Buffer* bfr = bufferRef.value()->buffer;
         renderActions.push([desc, gfx, this, buffer, offset, length, bfr, shdr](RenderingState state, VkCommandBuffer cmd) {
-            if(desc->second.set == 1) shdr->pipeline->bindBufferToDescriptor(shdr->shaderSet, desc->second.binding, bfr->getHandle(), desc->second.type, offset, length);
-            else if(desc->second.set == 0) shdr->pipeline->bindBufferToDescriptor(gfx->objectSet, desc->second.binding, bfr->getHandle(), desc->second.type, offset, length);
-            if(desc->second.boundBuffer != 0 && desc->second.isDefault) functions.destroy_resource(desc->second.boundBuffer);
-            desc->second.boundBuffer = buffer;
-            desc->second.boundOffset = offset;
-            desc->second.boundLength = length;
-            desc->second.isDefault = false;
+            if(desc->second->set == 1) shdr->pipeline->bindBufferToDescriptor(shdr->shaderSet, desc->second->binding, bfr->getHandle(), desc->second->type, offset, length);
+            else if(desc->second->set == 0) shdr->pipeline->bindBufferToDescriptor(gfx->objectSet, desc->second->binding, bfr->getHandle(), desc->second->type, offset, length);
+            if(desc->second->boundBuffer != 0 && desc->second->isDefault) functions.destroy_resource(desc->second->boundBuffer);
+            desc->second->boundBuffer = buffer;
+            desc->second->boundOffset = offset;
+            desc->second->boundLength = length;
+            desc->second->isDefault = false;
         });
     };
 
@@ -397,6 +404,7 @@ GuiRenderer::GuiRenderer(uint width, uint height, Window& window) : window(windo
                 memcpy(dataCpy, data, length);
                 renderActions.push([dataCpy, cons, offset, length, shdr](RenderingState state, VkCommandBuffer cmd) {
                     memcpy(shdr->pushConstant+cons->second+offset, dataCpy, length);
+                    delete[] dataCpy;
                 });
                 return;
             } else {
@@ -404,7 +412,7 @@ GuiRenderer::GuiRenderer(uint width, uint height, Window& window) : window(windo
                 auto descBlck = shdr->descriptors.find(descName);
                 if(descBlck == shdr->descriptors.end()) return;
 
-                descInfo = &descBlck->second;
+                descInfo = descBlck->second;
             }
         } else {
             descInfo = desc->second.descriptor;
@@ -421,6 +429,7 @@ GuiRenderer::GuiRenderer(uint width, uint height, Window& window) : window(windo
                 void* mapping = bfr->map();
                 memcpy((uint8_t*)mapping+offset, dataCpy, length);
                 bfr->unmap();
+                delete[] dataCpy;
             });
         }
     };
@@ -507,8 +516,8 @@ GuiRenderer::GuiRenderer(uint width, uint height, Window& window) : window(windo
         Image* img = imageRef.value()->image;
         
         renderActions.push([desc, img, gfx, shdr](RenderingState state, VkCommandBuffer cmd) {
-            if(desc->second.set == 1) shdr->pipeline->bindImageToDescriptor(shdr->shaderSet, desc->second.binding, img->getImageView(), img->getSampler(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, desc->second.type);
-            else if(desc->second.set == 0 && gfx != 0) shdr->pipeline->bindImageToDescriptor(gfx->objectSet, desc->second.binding, img->getImageView(), img->getSampler(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, desc->second.type);
+            if(desc->second->set == 1) shdr->pipeline->bindImageToDescriptor(shdr->shaderSet, desc->second->binding, img->getImageView(), img->getSampler(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, desc->second->type);
+            else if(desc->second->set == 0 && gfx != 0) shdr->pipeline->bindImageToDescriptor(gfx->objectSet, desc->second->binding, img->getImageView(), img->getSampler(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, desc->second->type);
         });
     };
 
