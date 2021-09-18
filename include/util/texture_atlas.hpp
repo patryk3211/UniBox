@@ -11,6 +11,8 @@ namespace unibox {
         bool isFree(unsigned int x, unsigned int y);
         bool isFree(unsigned int x, unsigned int y, unsigned int width, unsigned int height);
         void setState(unsigned int x, unsigned int y, bool state);
+
+        bool isModifiable;
     public:
         struct Coordinate {
             float x;
@@ -27,5 +29,7 @@ namespace unibox {
 
         Coordinate storeTexture(unsigned int width, unsigned int height, void* data);
         void* getAtlasData();
+
+        void finish();
     };
 }

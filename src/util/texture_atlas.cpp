@@ -24,28 +24,31 @@ TextureAtlas::TextureAtlas(unsigned int width, unsigned int height) {
     this->data = new unsigned int[width*height];
 
     for(int i = 0; i < width*height/32; i++) this->usageMap[i] = 0;
+
+    isModifiable = true;
 }
 
 TextureAtlas::~TextureAtlas() {
     delete[] this->data;
-    delete[] this->usageMap;
+    if(this->usageMap != 0) delete[] this->usageMap;
 }
 
 void TextureAtlas::setState(unsigned int x, unsigned int y, bool state) {
-    if(x >= width || y >= height) return;
+    if(x >= width || y >= height || !isModifiable) return;
     unsigned int index = x + y * width;
     if(state) this->usageMap[index/32] |= (1 << (index%32));
     else this->usageMap[index/32] &= ~(1 << (index%32));
 }
 
 bool TextureAtlas::isFree(unsigned int x, unsigned int y) {
-    if(x >= width || y >= height) return false;
+    if(x >= width || y >= height || !isModifiable) return false;
     unsigned int index = x + y * width;
     unsigned int data = this->usageMap[index/32];
     return !((data >> (index%32)) & 1);
 }
 
 bool TextureAtlas::isFree(unsigned int x, unsigned int y, unsigned int width, unsigned int height) {
+    if(!isModifiable) return false;
     for(unsigned int i = 0; i < width; i++) {
         for(unsigned int j = 0; j < height; j++) {
             if(!isFree(x+i, y+j)) return false;
@@ -55,6 +58,7 @@ bool TextureAtlas::isFree(unsigned int x, unsigned int y, unsigned int width, un
 }
 
 TextureAtlas::Coordinate TextureAtlas::storeTexture(unsigned int width, unsigned int height, void* data) {
+    if(!isModifiable) return { 0, 0, 0, 0 };
     unsigned int* data_int = (unsigned int*)data;
     for(unsigned int i = 0; i < this->width; i++) {
         for(unsigned int j = 0; j < this->height; j++) {
@@ -74,4 +78,10 @@ TextureAtlas::Coordinate TextureAtlas::storeTexture(unsigned int width, unsigned
 
 void* TextureAtlas::getAtlasData() {
     return data;
+}
+
+void TextureAtlas::finish() {
+    isModifiable = false;
+    delete usageMap;
+    usageMap = 0;
 }
