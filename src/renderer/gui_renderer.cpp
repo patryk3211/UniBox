@@ -380,7 +380,7 @@ GuiRenderer::GuiRenderer(uint width, uint height, Window& window) : window(windo
     };
 
     // Set Shader Variable
-    functions.set_shader_variable = [&](gui_resource_handle resource, const std::string& descName, void* data, size_t offset, size_t length) {
+    functions.set_shader_variable = [&](gui_resource_handle resource, const std::string& descName, const void* data, size_t offset, size_t length) {
         GuiShader* shdr;
         {
             auto renObjRef = getResource<RenderObject>(resource);
