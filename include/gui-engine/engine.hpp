@@ -26,7 +26,7 @@ namespace unibox::gui {
         std::function<gui_resource_handle(gui_resource_handle shader)> create_render_object;
         std::function<void(gui_resource_handle)> render_object;
         std::function<void(gui_resource_handle renderObject, gui_resource_handle mesh)> attach_mesh;
-        std::function<void(gui_resource_handle renderObject, const std::string&, void*, size_t, size_t)> set_shader_variable;
+        std::function<void(gui_resource_handle renderObject, const std::string&, const void*, size_t, size_t)> set_shader_variable;
         std::function<void(gui_resource_handle renderObject, const std::string&, gui_resource_handle, size_t offset, size_t length)> bind_buffer_to_descriptor;
         std::function<void(gui_resource_handle renderObject, const std::string&, gui_resource_handle)> bind_texture_to_descriptor;
 
@@ -43,6 +43,12 @@ namespace unibox::gui {
         std::function<void(gui_resource_handle)> destroy_resource;
 
         std::function<void(char* errorName, char* errorDescription)> error_callback;
+
+        // TODO: Implement more function templates and stuff.
+        void setShaderVariable(gui_resource_handle resource, const std::string& variableName, const void* value, size_t offset, size_t length) const { set_shader_variable(resource, variableName, value, offset, length); }
+        template<typename T> void setShaderVariable(gui_resource_handle resource, const std::string& variableName, const T& value) const {
+            set_shader_variable(resource, variableName, &value, 0, sizeof(value));
+        }
     };
 
     class GuiEngine {
