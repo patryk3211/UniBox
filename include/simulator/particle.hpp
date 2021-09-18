@@ -10,6 +10,7 @@
 #include <sol/sol.hpp>
 #include <simulator/voxel.hpp>
 #include <glm/vec4.hpp>
+#include <util/texture_atlas.hpp>
 
 namespace unibox {
     enum ParticlePhaseChangeCondition {
@@ -65,6 +66,10 @@ namespace unibox {
 
         static std::string updateInclude, drawInclude;
 
+        static TextureAtlas* iconAtlas;
+        static TextureAtlas::Coordinate missingIconCoord;
+        static TextureAtlas::Coordinate invalidIconCoord;
+
         ushort typeId;
 
         std::string displayName;
@@ -74,6 +79,7 @@ namespace unibox {
         std::optional<std::string> initScript;
         std::optional<std::string> updateScript;
         std::optional<std::string> drawScript;
+        TextureAtlas::Coordinate iconCoordinates;
 
         bool valid;
 
@@ -109,5 +115,7 @@ namespace unibox {
         static std::string& getMeshIncludeCode();
 
         static std::string constructTypeDefinitions();
+
+        static void* getIconImage(uint* width, uint* height);
     };
 }

@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <regex>
 
+#include <util/base64.hpp>
+
 using namespace unibox;
 using namespace nlohmann;
 
@@ -15,6 +17,9 @@ std::unordered_map<std::string, std::list<Particle**>> Particle::deferredPointer
 std::vector<Particle*> Particle::particlesIdArray = std::vector<Particle*>();
 std::string Particle::updateInclude;
 std::string Particle::drawInclude;
+TextureAtlas* Particle::iconAtlas = 0;
+TextureAtlas::Coordinate Particle::missingIconCoord;
+TextureAtlas::Coordinate Particle::invalidIconCoord;
 
 Particle::Particle() {
     valid = false;
@@ -22,6 +27,20 @@ Particle::Particle() {
 
 Particle::Particle(const std::string& particleDir) {
     valid = false;
+
+    if(iconAtlas == 0) {
+        iconAtlas = new TextureAtlas(2048, 2048);
+        uint32_t pixels[] = {
+            0xFF00FFFF, 0x000000FF,
+            0x000000FF, 0xFF00FFFF
+        };
+        missingIconCoord = iconAtlas->storeTexture(2, 2, pixels);
+        uint32_t pixels2[] = {
+            0xFF0000FF, 0x000000FF,
+            0x000000FF, 0xFF0000FF
+        };
+        invalidIconCoord = iconAtlas->storeTexture(2, 2, pixels2);
+    }
 
     json propJson;
     std::ifstream propStream = std::ifstream(particleDir + "/properties.json", std::ios::binary);
@@ -156,6 +175,43 @@ Particle::Particle(const std::string& particleDir) {
             const std::string value = drawJson->get<std::string>();
             if(value.find(':') != std::string::npos) drawScript = std::optional(particleDir + "/" + value);
             else drawScript = std::optional(value);
+        }
+    }
+    {
+        auto iconJson = propJson.find("icon");
+        if(iconJson == propJson.end()) iconCoordinates = missingIconCoord;
+        else {
+            if(iconJson->is_string()) {
+                // Open the given file.
+                spdlog::warn("Loading images from files as icons of particles is not implemented yet.");
+            } else if(iconJson->is_object()) {
+                // Parse the in json image.
+                auto widthJson = iconJson->find("width");
+                auto heightJson = iconJson->find("height");
+                auto dataJson = iconJson->find("data");
+                if(widthJson == iconJson->end() || heightJson == iconJson->end() || dataJson == iconJson->end()) {
+                    spdlog::error("A JSON icon object must contain 3 fields (width, height and data)");
+                    iconCoordinates = invalidIconCoord;
+                } else {
+                    int width = widthJson->get<int>();
+                    int height = heightJson->get<int>();
+                    if(width > 0 && height > 0) {
+                        if(!dataJson->is_string()) {
+                            spdlog::error("The data property in icon must be a string.");
+                            iconCoordinates = invalidIconCoord;
+                        } else {
+                            auto data = base64::decode(dataJson->get<std::string>());
+                            iconCoordinates = iconAtlas->storeTexture(width, height, data.data());
+                        }
+                    } else {
+                        spdlog::error("Width and height must be greater than 0.");
+                        iconCoordinates = invalidIconCoord;
+                    }
+                }
+            } else {
+                spdlog::error("The icon property must either be a path to an image or an image encoded in JSON object.");
+                iconCoordinates = invalidIconCoord;
+            }
         }
     }
 
@@ -441,4 +497,10 @@ std::string Particle::readFile(const std::string& filepath) {
     std::stringstream strstream;
     strstream << stream.rdbuf();
     return strstream.str();
+}
+
+void* Particle::getIconImage(uint* width, uint* height) {
+    *width = 2048;
+    *height = 2048;
+    return iconAtlas->getAtlasData();
 }
