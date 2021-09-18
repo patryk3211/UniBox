@@ -26,6 +26,7 @@ set(SOURCES src/main.cpp
             src/util/finalizer.cpp
             src/util/format.cpp
             src/util/texture_atlas.cpp
+            src/util/base64.cpp
             src/cl-engine/engine.cpp
             src/gui-engine/engine.cpp
             src/gui-engine/object.cpp
