@@ -115,7 +115,7 @@ void GuiEngine::render(double frameTime, double x, double y) {
 gui_resource_handle GuiEngine::createTexture(const std::string& filepath) {
     int width, height, channels;
     stbi_uc* pixels = stbi_load(filepath.c_str(), &width, &height, &channels, STBI_rgb_alpha);
-    return renderEngine.create_texture(width, height, pixels, LINEAR, NEAREST);
+    return renderEngine.create_texture(width, height, pixels, NEAREST, NEAREST);
 }
 
 void GuiEngine::onMouseDown(double x, double y, int button) {
