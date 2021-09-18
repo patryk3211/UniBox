@@ -4,6 +4,7 @@ layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 uv;
 
 layout (location = 0) out vec2 pass_uv;
+layout (location = 1) out vec4 pass_tint;
 
 layout (set = 1, binding = 0) uniform Matrices {
     mat4 projectMatrix;
@@ -11,9 +12,11 @@ layout (set = 1, binding = 0) uniform Matrices {
 
 layout ( push_constant ) uniform Push {
     mat4 transformMatrix;
+    vec4 tint;
 } push;
 
 void main() {
     gl_Position = matrices.projectMatrix * push.transformMatrix * vec4(position, 1.0);
     pass_uv = uv;
+    pass_tint = push.tint;
 }
