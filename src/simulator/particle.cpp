@@ -30,14 +30,14 @@ Particle::Particle(const std::string& particleDir) {
 
     if(iconAtlas == 0) {
         iconAtlas = new TextureAtlas(2048, 2048);
-        uint32_t pixels[] = {
-            0xFF00FFFF, 0x000000FF,
-            0x000000FF, 0xFF00FFFF
+        uint8_t pixels[] = {
+            0xFF, 0x00, 0xFF, 0xFF,   0x00, 0x00, 0x00, 0xFF,
+            0x00, 0x00, 0x00, 0xFF,   0xFF, 0x00, 0xFF, 0xFF
         };
         missingIconCoord = iconAtlas->storeTexture(2, 2, pixels);
-        uint32_t pixels2[] = {
-            0xFF0000FF, 0x000000FF,
-            0x000000FF, 0xFF0000FF
+        uint8_t pixels2[] = {
+            0xFF, 0x00, 0x00, 0xFF,   0x00, 0x00, 0x00, 0xFF,
+            0x00, 0x00, 0x00, 0xFF,   0xFF, 0x00, 0x00, 0xFF
         };
         invalidIconCoord = iconAtlas->storeTexture(2, 2, pixels2);
     }
