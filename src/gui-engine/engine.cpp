@@ -16,10 +16,12 @@ GuiEngine::GuiEngine(const RenderEngine& renderEngine) {
 
     gui_resource_handle shader = createShader("shaders/gui/texture/vertex.spv", "shaders/gui/texture/fragment.spv", SPIRV, "default_textured_shader");
     gui_resource_handle shader2 = createShader("shaders/gui/color/vertex.spv", "shaders/gui/color/fragment.spv", SPIRV, "default_colored_shader");
+    gui_resource_handle shader3 = createShader("shaders/gui/atlas/vertex.spv", "shaders/gui/atlas/fragment.spv", SPIRV, "default_texture_atlas_shader");
 
     glm::mat4 projection = glm::ortho(0.0f, (float)renderEngine.width, 0.0f, (float)renderEngine.height, 10.0f, -10.0f);
     renderEngine.set_shader_variable(shader, "projectMatrix", &projection, 0, sizeof(projection));
     renderEngine.set_shader_variable(shader2, "projectMatrix", &projection, 0, sizeof(projection));
+    renderEngine.set_shader_variable(shader3, "projectMatrix", &projection, 0, sizeof(projection));
 
     default_mesh = renderEngine.create_mesh();
 

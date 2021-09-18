@@ -15,8 +15,13 @@ cp compute/simulator.cl $OUTPUT/shaders/compute/simulator.cl
 
 mkdir -p $OUTPUT/shaders/gui/texture
 mkdir -p $OUTPUT/shaders/gui/color
+mkdir -p $OUTPUT/shaders/gui/atlas
+
 glslc gui/texture/texture.vert -o $OUTPUT/shaders/gui/texture/vertex.spv
 glslc gui/texture/texture.frag -o $OUTPUT/shaders/gui/texture/fragment.spv
 
 glslc gui/color/color.vert -o $OUTPUT/shaders/gui/color/vertex.spv
 glslc gui/color/color.frag -o $OUTPUT/shaders/gui/color/fragment.spv
+
+glslc gui/atlas/atlas.vert -o $OUTPUT/shaders/gui/atlas/vertex.spv
+glslc gui/atlas/atlas.frag -o $OUTPUT/shaders/gui/atlas/fragment.spv
