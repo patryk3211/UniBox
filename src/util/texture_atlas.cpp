@@ -168,6 +168,11 @@ VariableTextureAtlas::Coordinate VariableTextureAtlas::storeTexture(unsigned int
     unsigned int powHeight = 1;
     while(powHeight < newHeight) powHeight <<= 1;
 
+    if(powWidth != powHeight) {
+        if(powWidth > powHeight) powHeight = powWidth;
+        else powWidth = powHeight;
+    }
+
     enlarge(powWidth-this->width, powHeight-this->height); // Enlarge the atlas.
     return storeTexture(width, height, data); // Try to store again.
 }
