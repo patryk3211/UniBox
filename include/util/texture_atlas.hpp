@@ -73,6 +73,7 @@ namespace unibox {
         void enlarge(unsigned int deltaX, unsigned int deltaY);
 
         bool modifiable;
+        bool precisePacking;
     public:
         struct Coordinate {
             const VariableTextureAtlas* atlas;
@@ -85,7 +86,7 @@ namespace unibox {
             TextureAtlas::Coordinate resolve();
         };
 
-        VariableTextureAtlas(unsigned int initialWidth, unsigned int initialHeight);
+        VariableTextureAtlas(unsigned int initialWidth, unsigned int initialHeight, bool precisePacking);
         ~VariableTextureAtlas();
 
         Coordinate storeTexture(unsigned int width, unsigned int height, const void* data);

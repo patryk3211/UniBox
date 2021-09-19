@@ -125,7 +125,7 @@ void VariableTextureAtlas::enlarge(unsigned int deltaX, unsigned int deltaY) {
     for(int y = 0; y < height; y++) data[y].resize(width);
 }
 
-VariableTextureAtlas::VariableTextureAtlas(unsigned int initialWidth, unsigned int initialHeight) {
+VariableTextureAtlas::VariableTextureAtlas(unsigned int initialWidth, unsigned int initialHeight, bool precisePacking) {
     this->width = 0;
     this->height = 0;
 
@@ -133,6 +133,7 @@ VariableTextureAtlas::VariableTextureAtlas(unsigned int initialWidth, unsigned i
     enlarge(initialWidth, initialHeight);
 
     finishedData = 0;
+    this->precisePacking = precisePacking;
 }
 
 VariableTextureAtlas::~VariableTextureAtlas() {
@@ -151,7 +152,16 @@ VariableTextureAtlas::Coordinate VariableTextureAtlas::storeTexture(unsigned int
                     this->data[y+j][x+i] = data_i[i+j*width];
                     Point p = { x+i, y+j };
                     freeMap[y+j].freeBitmap[x+i] = 1;
-                    freeMap[y+j].firstFreeIdx = x+i;
+                    if(!precisePacking) freeMap[y+j].firstFreeIdx = x+i;
+                }
+                // Recalculate the firstFreeIdx for the line.
+                if(precisePacking) {
+                    for(int i = 0; i < this->width; i++) {
+                        if(freeMap[y+j].freeBitmap[i] == 0) {
+                            freeMap[y+j].firstFreeIdx = i;
+                            break;
+                        }
+                    }
                 }
             }
             return { this, x, y, width, height };
