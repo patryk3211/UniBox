@@ -122,12 +122,6 @@ void VariableTextureAtlas::enlarge(unsigned int deltaX, unsigned int deltaY) {
             freeMap.push_back(p);
         }
     }
-    /*for(int i = 0; i < deltaX; i++) {
-        for(int j = 0; j < deltaY; j++) {
-            Point p = { width+i, height+j };
-            freeMap.push_back(p);
-        }
-    }*/
     this->width += deltaX;
     this->height += deltaY;
     data.resize(height);
@@ -157,7 +151,9 @@ VariableTextureAtlas::Coordinate VariableTextureAtlas::storeTexture(unsigned int
             // Found a free pos
             for(int j = 0; j < height; j++) {
                 for(int i = 0; i < width; i++) {
-                    this->data[j][i] = data_i[i+j*width];
+                    this->data[y+j][x+i] = data_i[i+j*width];
+                    Point p = { x+i, y+j };
+                    freeMap.remove(p);
                 }
             }
             return { this, x, y, width, height };
