@@ -107,7 +107,7 @@ bool VariableTextureAtlas::isFree(unsigned int x, unsigned int y, unsigned int w
     return true;
 }
 
-TextureAtlas::Coordinate VariableTextureAtlas::Coordinate::resolve() {
+TextureAtlas::Coordinate VariableTextureAtlas::Coordinate::resolve() const {
     if(atlas->modifiable) spdlog::warn("Resolving texture coordinates for an unfinished atlas, the coordinates may not be valid after a texture insertion.");
     TextureAtlas::Coordinate coord = { x/(float)atlas->width, y/(float)atlas->height, width/(float)atlas->width, height/(float)atlas->height };
     return coord;
@@ -187,7 +187,7 @@ VariableTextureAtlas::Coordinate VariableTextureAtlas::storeTexture(unsigned int
     return storeTexture(width, height, data); // Try to store again.
 }
 
-void* VariableTextureAtlas::getAtlasData() {
+void* VariableTextureAtlas::getAtlasData() const {
     if(modifiable) {
         spdlog::error("Cannot take the data of an unfinished variable texture atlas.");
         return 0;
@@ -207,10 +207,10 @@ void VariableTextureAtlas::finish() {
     }
 }
 
-unsigned int VariableTextureAtlas::getWidth() {
+unsigned int VariableTextureAtlas::getWidth() const {
     return width;
 }
 
-unsigned int VariableTextureAtlas::getHeight() {
+unsigned int VariableTextureAtlas::getHeight() const {
     return height;
 }

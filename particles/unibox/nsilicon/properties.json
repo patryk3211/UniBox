@@ -9,5 +9,7 @@
 
     "color": [ 42, 74, 115 ],
 
-    "update": "conductorUpdate"
+    "update": "conductorUpdate",
+
+    "icon": "nsilicon.png"
 }

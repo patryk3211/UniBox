@@ -9,5 +9,7 @@
 
     "color": [ 209, 86, 38 ],
 
-    "update": "conductorUpdate"
+    "update": "conductorUpdate",
+
+    "icon": "copper.png"
 }

@@ -83,19 +83,19 @@ namespace unibox {
             unsigned int width;
             unsigned int height;
 
-            TextureAtlas::Coordinate resolve();
+            TextureAtlas::Coordinate resolve() const;
         };
 
         VariableTextureAtlas(unsigned int initialWidth, unsigned int initialHeight, bool precisePacking);
         ~VariableTextureAtlas();
 
         Coordinate storeTexture(unsigned int width, unsigned int height, const void* data);
-        void* getAtlasData();
+        void* getAtlasData() const;
 
-        unsigned int getWidth();
-        unsigned int getHeight();
+        unsigned int getWidth() const;
+        unsigned int getHeight() const;
 
         void finish();
-        bool isFinished() { return !modifiable; }
+        bool isFinished() const { return !modifiable; }
     };
 }

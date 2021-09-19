@@ -27,6 +27,8 @@ set(SOURCES src/main.cpp
             src/util/format.cpp
             src/util/texture_atlas.cpp
             src/util/base64.cpp
+            src/util/font.cpp
+            src/util/text.cpp
             src/cl-engine/engine.cpp
             src/gui-engine/engine.cpp
             src/gui-engine/object.cpp
@@ -50,7 +52,7 @@ target_include_directories(unibox PRIVATE ${CMAKE_SOURCE_DIR}/include
                                   PRIVATE ${CMAKE_SOURCE_DIR}/Lua/lua-5.4.3/include
                                   PRIVATE ${CMAKE_SOURCE_DIR}/json/include)
 
-target_link_libraries(unibox "-lglfw -lvulkan -lOpenCL -ldl -lX11 -lXxf86vm -lXrandr -lXi -lglslang -lMachineIndependent -lOSDependent -lGenericCodeGen -lOGLCompiler -lSPIRV -lpthread" spdlog::spdlog vk-bootstrap::vk-bootstrap sol2::sol2 nlohmann_json::nlohmann_json)
+target_link_libraries(unibox "-lglfw -lvulkan -lOpenCL -ldl -lX11 -lXxf86vm -lXrandr -lXi -lglslang -lMachineIndependent -lOSDependent -lGenericCodeGen -lOGLCompiler -lSPIRV -lpthread -lfreetype" spdlog::spdlog vk-bootstrap::vk-bootstrap sol2::sol2 nlohmann_json::nlohmann_json)
 
 add_custom_target(unibox-prepare-run
                   mkdir -p ${CMAKE_SOURCE_DIR}/run && cp ${CMAKE_BINARY_DIR}/unibox ${CMAKE_SOURCE_DIR}/run/unibox

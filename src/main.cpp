@@ -13,6 +13,8 @@
 #include <renderer/gui_renderer.hpp>
 #include <guis/element_bar.hpp>
 
+#include <util/font.hpp>
+
 #include <chrono>
 #include <future>
 #include <cmath>
@@ -25,6 +27,9 @@ int main(int argc, char** argv) {
     spdlog::info("Welcome to UniBox!");
 
     Finalizer* finalizer = new Finalizer();
+
+    /*util::Font fo("resources/gui/fonts/Ubuntu-R.ttf", 64);
+    fo.bakeAtlas();*/
 
     ClEngine clEngine = ClEngine();
 
@@ -40,7 +45,6 @@ int main(int argc, char** argv) {
 
     gui::gui_resource_handle tex = guiEngine.createTexture("resources/gui/textures/material_select_button_64.png");
     gui::gui_resource_handle tex2 = guiEngine.createTexture("resources/gui/textures/material_select_button_hover_64.png");
-    ElementBar bar = ElementBar(guiEngine);
     //gui::Button but = gui::Button(guiEngine, guiEngine.getShader("default_textured_shader"), tex, tex2, tex, 1280/2, 720/2, 64, 64);
 
     float zoom = 600.0f;
@@ -61,6 +65,8 @@ int main(int argc, char** argv) {
 
     ParticleGrid::waitInitComplete();
     ParticleGrid* grid = new ParticleGrid(1024, 1024, 1);
+
+    ElementBar bar = ElementBar(guiEngine);
 
     spdlog::info("Random gen start");
     {

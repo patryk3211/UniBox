@@ -95,6 +95,8 @@ namespace unibox {
         void fillPip(ParticleInfoPacket& pip);
         void fillSimPip(SimulationParticleInfoPacket& simPip);
 
+        const TextureAtlas::Coordinate& getTextureAtlasIcon();
+
         bool isValid();
 
         static Particle& getParticle(const std::string& name);

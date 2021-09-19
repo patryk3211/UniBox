@@ -9,5 +9,7 @@
 
     "color": [ 168, 80, 74 ],
 
-    "update": "update.cl:unibox_psilicon_update"
+    "update": "update.cl:unibox_psilicon_update",
+
+    "icon": "psilicon.png"
 }

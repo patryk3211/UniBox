@@ -8,6 +8,7 @@
 #include <regex>
 
 #include <util/base64.hpp>
+#include <stb/stb_image.h>
 
 using namespace unibox;
 using namespace nlohmann;
@@ -183,7 +184,14 @@ Particle::Particle(const std::string& particleDir) {
         else {
             if(iconJson->is_string()) {
                 // Open the given file.
-                spdlog::warn("Loading images from files as icons of particles is not implemented yet.");
+                int width, height, channels;
+                auto file = iconJson->get<std::string>();
+                stbi_uc* pixels = stbi_load((particleDir + "/" + file).c_str(), &width, &height, &channels, STBI_rgb_alpha);
+                if(pixels != 0) iconCoordinates = iconAtlas->storeTexture(width, height, pixels);
+                else {
+                    spdlog::error("Failed to load image from file");
+                    iconCoordinates = missingIconCoord;
+                }
             } else if(iconJson->is_object()) {
                 // Parse the in json image.
                 auto widthJson = iconJson->find("width");
@@ -222,6 +230,10 @@ Particle::Particle(const std::string& particleDir) {
 
 Particle::~Particle() {
 
+}
+
+const TextureAtlas::Coordinate& Particle::getTextureAtlasIcon() {
+    return iconCoordinates;
 }
 
 bool Particle::isValid() {
