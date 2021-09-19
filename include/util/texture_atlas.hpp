@@ -36,7 +36,7 @@ namespace unibox {
         void finish();
     };
 
-    class VariableTextureAtlas { // TODO: I think this could be optimized with a quad tree, but is it really worth it?
+    class VariableTextureAtlas {
         struct Point {
             unsigned int x;
             unsigned int y;
@@ -45,9 +45,23 @@ namespace unibox {
                 return other.x == x && other.y == y;
             }
         };
+
+        struct UsageLine {
+            unsigned int firstFreeIdx;
+            std::vector<unsigned char> freeBitmap;
+
+            UsageLine() :
+            firstFreeIdx(0) { }
+
+            UsageLine(unsigned int size) :
+            freeBitmap(size),
+            firstFreeIdx(0) { }
+
+            void resize(unsigned int size) { freeBitmap.resize(size); }
+        };
         
         std::vector<std::vector<unsigned int>> data;
-        std::list<Point> freeMap;
+        std::vector<UsageLine> freeMap;
         unsigned int* finishedData;
 
         unsigned int width;

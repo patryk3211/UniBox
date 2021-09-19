@@ -93,8 +93,8 @@ void TextureAtlas::finish() {
 
 bool VariableTextureAtlas::isFree(unsigned int x, unsigned int y) {
     if(!modifiable) return false;
-    Point p = { x, y };
-    return std::find(freeMap.begin(), freeMap.end(), p) != freeMap.end();
+    if(y >= height || x >= width) return false;
+    return freeMap[y].freeBitmap[x] == 0;
 }
 
 bool VariableTextureAtlas::isFree(unsigned int x, unsigned int y, unsigned int width, unsigned int height) {
@@ -115,12 +115,9 @@ TextureAtlas::Coordinate VariableTextureAtlas::Coordinate::resolve() {
 
 void VariableTextureAtlas::enlarge(unsigned int deltaX, unsigned int deltaY) {
     if(!modifiable) return;
-    for(int i = 0; i < width+deltaX; i++) {
-        for(int j = 0; j < height+deltaY; j++) {
-            if(i < width && j < height) continue;
-            Point p = { i, j };
-            freeMap.push_back(p);
-        }
+    freeMap.resize(height+deltaY);
+    for(int j = 0; j < height+deltaY; j++) {
+        freeMap[j].freeBitmap.resize(width+deltaX);
     }
     this->width += deltaX;
     this->height += deltaY;
@@ -146,14 +143,15 @@ VariableTextureAtlas::Coordinate VariableTextureAtlas::storeTexture(unsigned int
     if(!modifiable) return { 0, 0, 0, 0 };
     const unsigned int* data_i = (const unsigned int*)data;
     for(unsigned int y = 0; y < this->height; y++) {
-        for(unsigned int x = 0; x < this->width; x++) {
+        for(unsigned int x = freeMap[y].firstFreeIdx; x < this->width; x++) {
             if(!isFree(x, y, width, height)) continue;
             // Found a free pos
             for(int j = 0; j < height; j++) {
                 for(int i = 0; i < width; i++) {
                     this->data[y+j][x+i] = data_i[i+j*width];
                     Point p = { x+i, y+j };
-                    freeMap.remove(p);
+                    freeMap[y+j].freeBitmap[x+i] = 1;
+                    freeMap[y+j].firstFreeIdx = x+i;
                 }
             }
             return { this, x, y, width, height };
