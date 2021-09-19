@@ -197,3 +197,11 @@ void VariableTextureAtlas::finish() {
         }
     }
 }
+
+unsigned int VariableTextureAtlas::getWidth() {
+    return width;
+}
+
+unsigned int VariableTextureAtlas::getHeight() {
+    return height;
+}

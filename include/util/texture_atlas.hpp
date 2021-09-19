@@ -77,6 +77,9 @@ namespace unibox {
         Coordinate storeTexture(unsigned int width, unsigned int height, const void* data);
         void* getAtlasData();
 
+        unsigned int getWidth();
+        unsigned int getHeight();
+
         void finish();
     };
 }
