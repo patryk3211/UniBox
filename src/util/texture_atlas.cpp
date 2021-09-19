@@ -1,5 +1,7 @@
 #include <util/texture_atlas.hpp>
 
+#include <spdlog/spdlog.h>
+
 using namespace unibox;
 
 TextureAtlas::Coordinate::Coordinate() {
@@ -74,6 +76,7 @@ TextureAtlas::Coordinate TextureAtlas::storeTexture(unsigned int width, unsigned
             }
         }
     }
+    return { 0, 0, 0, 0 };
 }
 
 void* TextureAtlas::getAtlasData() {
@@ -84,4 +87,113 @@ void TextureAtlas::finish() {
     isModifiable = false;
     delete usageMap;
     usageMap = 0;
+}
+
+
+
+bool VariableTextureAtlas::isFree(unsigned int x, unsigned int y) {
+    if(!modifiable) return false;
+    Point p = { x, y };
+    return std::find(freeMap.begin(), freeMap.end(), p) != freeMap.end();
+}
+
+bool VariableTextureAtlas::isFree(unsigned int x, unsigned int y, unsigned int width, unsigned int height) {
+    if(!modifiable) return false;
+    for(unsigned int i = 0; i < width; i++) {
+        for(unsigned int j = 0; j < height; j++) {
+            if(!isFree(x+i, y+j)) return false;
+        }
+    }
+    return true;
+}
+
+TextureAtlas::Coordinate VariableTextureAtlas::Coordinate::resolve() {
+    if(atlas->modifiable) spdlog::warn("Resolving texture coordinates for an unfinished atlas, the coordinates may not be valid after a texture insertion.");
+    TextureAtlas::Coordinate coord = { x/(float)atlas->width, y/(float)atlas->height, width/(float)atlas->width, height/(float)atlas->height };
+    return coord;
+}
+
+void VariableTextureAtlas::enlarge(unsigned int deltaX, unsigned int deltaY) {
+    if(!modifiable) return;
+    for(int i = 0; i < width+deltaX; i++) {
+        for(int j = 0; j < height+deltaY; j++) {
+            if(i < width && j < height) continue;
+            Point p = { i, j };
+            freeMap.push_back(p);
+        }
+    }
+    /*for(int i = 0; i < deltaX; i++) {
+        for(int j = 0; j < deltaY; j++) {
+            Point p = { width+i, height+j };
+            freeMap.push_back(p);
+        }
+    }*/
+    this->width += deltaX;
+    this->height += deltaY;
+    data.resize(height);
+    for(int y = 0; y < height; y++) data[y].resize(width);
+}
+
+VariableTextureAtlas::VariableTextureAtlas(unsigned int initialWidth, unsigned int initialHeight) {
+    this->width = 0;
+    this->height = 0;
+
+    modifiable = true;
+    enlarge(initialWidth, initialHeight);
+
+    finishedData = 0;
+}
+
+VariableTextureAtlas::~VariableTextureAtlas() {
+    if(finishedData != 0) delete[] finishedData;
+}
+
+VariableTextureAtlas::Coordinate VariableTextureAtlas::storeTexture(unsigned int width, unsigned int height, const void* data) {
+    if(!modifiable) return { 0, 0, 0, 0 };
+    const unsigned int* data_i = (const unsigned int*)data;
+    for(unsigned int y = 0; y < this->height; y++) {
+        for(unsigned int x = 0; x < this->width; x++) {
+            if(!isFree(x, y, width, height)) continue;
+            // Found a free pos
+            for(int j = 0; j < height; j++) {
+                for(int i = 0; i < width; i++) {
+                    this->data[j][i] = data_i[i+j*width];
+                }
+            }
+            return { this, x, y, width, height };
+        }
+    }
+
+    // Did not find a viable position, we have to enlarge the atlas.
+    unsigned int newWidth = this->width+width;
+    unsigned int newHeight = this->height+height;
+    
+    // Find the powers of 2 of the new width and height.
+    unsigned int powWidth = 1;
+    while(powWidth < newWidth) powWidth <<= 1;
+    unsigned int powHeight = 1;
+    while(powHeight < newHeight) powHeight <<= 1;
+
+    enlarge(powWidth-this->width, powHeight-this->height); // Enlarge the atlas.
+    return storeTexture(width, height, data); // Try to store again.
+}
+
+void* VariableTextureAtlas::getAtlasData() {
+    if(modifiable) {
+        spdlog::error("Cannot take the data of an unfinished variable texture atlas.");
+        return 0;
+    }
+    return finishedData;
+}
+
+void VariableTextureAtlas::finish() {
+    if(!modifiable) return;
+    modifiable = false;
+    freeMap.clear();
+    finishedData = new unsigned int[width*height];
+    for(unsigned int j = 0; j < height; j++) {
+        for(unsigned int i = 0; i < width; i++) {
+            finishedData[i+j*width] = data[j][i];
+        }
+    }
 }
