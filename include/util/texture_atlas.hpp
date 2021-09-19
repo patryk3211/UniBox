@@ -95,5 +95,6 @@ namespace unibox {
         unsigned int getHeight();
 
         void finish();
+        bool isFinished() { return !modifiable; }
     };
 }
