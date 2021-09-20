@@ -62,7 +62,7 @@ const FT_Bitmap* Font::getBitmap(FT_ULong c) const {
     return &fontface->glyph->bitmap;
 }
 
-void Font::bakeAtlas(bool distanceField) {
+void Font::bakeAtlas() {
     if(atlas.isFinished()) return;
     spdlog::info("Font texture atlas bake started.");
     auto start = std::chrono::high_resolution_clock::now();
@@ -70,7 +70,7 @@ void Font::bakeAtlas(bool distanceField) {
     struct CharToResolve {
         FT_ULong character;
 
-        VariableTextureAtlas<unsigned int>::Coordinate coordinate;
+        VariableTextureAtlas<unsigned char>::Coordinate coordinate;
 
         float left;
         float top;
@@ -86,11 +86,11 @@ void Font::bakeAtlas(bool distanceField) {
     for(FT_ULong c = FT_Get_First_Char(fontface, &idx); idx != 0; c = FT_Get_Next_Char(fontface, c, &idx)) {
         const FT_Bitmap* bitmap = getBitmap(c);
         if(bitmap->buffer != 0) {
-            unsigned int img[bitmap->rows*bitmap->width];
+            unsigned char img[bitmap->rows*bitmap->width];
             for(int i = 0; i < bitmap->width; i++) {
                 for(int j = 0; j < bitmap->rows; j++) {
                     unsigned char color = ((unsigned char*)bitmap->buffer)[i+j*bitmap->pitch];
-                    img[i+j*bitmap->width] = 0xFFFFFF | (color << 24);
+                    img[i+j*bitmap->width] = color;
                 }
             }
             CharToResolve res = { 
@@ -148,7 +148,7 @@ const Character& Font::getCharacter(FT_ULong c) const {
     return characterMap.at(c);
 }
 
-const VariableTextureAtlas<unsigned int>& Font::getAtlas() const {
+const VariableTextureAtlas<unsigned char>& Font::getAtlas() const {
     return atlas;
 }
 

@@ -31,7 +31,7 @@ namespace unibox::util {
         FT_Face fontface;
         std::unordered_map<FT_ULong, Character> characterMap;
 
-        VariableTextureAtlas<unsigned int> atlas;
+        VariableTextureAtlas<unsigned char> atlas;
 
         float fontSize;
     public:
@@ -41,9 +41,9 @@ namespace unibox::util {
         const FT_Bitmap* getBitmap(FT_ULong c) const;
         const Character& getCharacter(FT_ULong c) const;
 
-        const VariableTextureAtlas<unsigned int>& getAtlas() const;
+        const VariableTextureAtlas<unsigned char>& getAtlas() const;
 
-        void bakeAtlas(bool distanceField);
+        void bakeAtlas();
 
         float getFontSize() const;
     };
