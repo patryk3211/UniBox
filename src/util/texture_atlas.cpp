@@ -72,7 +72,8 @@ TextureAtlas::Coordinate TextureAtlas::storeTexture(unsigned int width, unsigned
                         this->data[i+x + (j+y) * this->width] = data_int[x + y * width];
                     }
                 }
-                return { i/(float)this->width, j/(float)this->height, width/(float)this->width, height/(float)this->height };
+                // Add half a pixel so that bad stuff doesn't happen.
+                return { (i+.5f)/(float)this->width, (j+.5f)/(float)this->height, (width-1)/(float)this->width, (height-1)/(float)this->height };
             }
         }
     }
@@ -109,7 +110,8 @@ bool VariableTextureAtlas::isFree(unsigned int x, unsigned int y, unsigned int w
 
 TextureAtlas::Coordinate VariableTextureAtlas::Coordinate::resolve() const {
     if(atlas->modifiable) spdlog::warn("Resolving texture coordinates for an unfinished atlas, the coordinates may not be valid after a texture insertion.");
-    TextureAtlas::Coordinate coord = { x/(float)atlas->width, y/(float)atlas->height, width/(float)atlas->width, height/(float)atlas->height };
+    // Add half a pixel to the coordinates so that bad stuff doesn't happen.
+    TextureAtlas::Coordinate coord = { (x+.5f)/(float)atlas->width, (y+.5f)/(float)atlas->height, (width-1)/(float)atlas->width, (height-1)/(float)atlas->height };
     return coord;
 }
 
