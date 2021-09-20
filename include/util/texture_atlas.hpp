@@ -64,7 +64,7 @@ namespace unibox {
         
         std::vector<std::vector<T>> data;
         std::vector<UsageLine> freeMap;
-        unsigned int* finishedData;
+        T* finishedData;
 
         unsigned int width;
         unsigned int height;
@@ -192,7 +192,7 @@ namespace unibox {
             if(!modifiable) return;
             modifiable = false;
             freeMap.clear();
-            finishedData = new unsigned int[width*height];
+            finishedData = new T[width*height];
             for(unsigned int j = 0; j < height; j++) {
                 for(unsigned int i = 0; i < width; i++) {
                     finishedData[i+j*width] = data[j][i];
