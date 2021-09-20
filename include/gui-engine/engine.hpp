@@ -19,6 +19,13 @@ namespace unibox::gui {
         LINEAR
     };
 
+    enum ImageFormat {
+        R8G8B8A8,
+        R8G8B8,
+        R8G8,
+        R8
+    };
+
     struct RenderEngine {
         uint width;
         uint height;
@@ -33,7 +40,7 @@ namespace unibox::gui {
         std::function<gui_resource_handle()> create_mesh;
         std::function<void(gui_resource_handle, const std::vector<uint8_t>& data, uint vertexCount)> add_mesh_vertex_data;
         std::function<void(gui_resource_handle, const std::vector<uint>& indices, uint vertexCount)> add_mesh_indices;
-        std::function<gui_resource_handle(uint width, uint height, const void* data, ImageFilter minFilter, ImageFilter magFilter)> create_texture;
+        std::function<gui_resource_handle(uint width, uint height, const void* data, ImageFormat format, ImageFilter minFilter, ImageFilter magFilter)> create_texture;
 
         std::function<gui_resource_handle(size_t)> create_buffer;
         std::function<void(gui_resource_handle, void*, size_t, size_t)> write_buffer;
@@ -65,6 +72,8 @@ namespace unibox::gui {
         gui_resource_handle default_mesh;
 
         uint width, height;
+
+        glm::mat4 projection;
     public:
         GuiEngine(const RenderEngine& renderEngine);
         ~GuiEngine();
@@ -73,6 +82,7 @@ namespace unibox::gui {
 
         gui_resource_handle createShader(const std::string& vertex, const std::string& fragment, ShaderLanguage lang, const std::string& registryName);
         gui_resource_handle getShader(const std::string& shaderName);
+        gui_resource_handle getOrCreateShader(const std::string& shaderName, const std::string& vertex, const std::string& fragment, ShaderLanguage lang, const std::function<void(GuiEngine&, gui_resource_handle)>& initFunc);
 
         gui_handle addItem(GuiObject* object);
         void removeItem(gui_handle handle);
@@ -88,5 +98,7 @@ namespace unibox::gui {
 
         uint getWidth();
         uint getHeight();
+
+        const glm::mat4& getProjectionMatrix();
     };
 }

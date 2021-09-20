@@ -18,7 +18,7 @@ GuiEngine::GuiEngine(const RenderEngine& renderEngine) {
     gui_resource_handle shader2 = createShader("shaders/gui/color/vertex.spv", "shaders/gui/color/fragment.spv", SPIRV, "default_colored_shader");
     gui_resource_handle shader3 = createShader("shaders/gui/atlas/vertex.spv", "shaders/gui/atlas/fragment.spv", SPIRV, "default_texture_atlas_shader");
 
-    glm::mat4 projection = glm::ortho(0.0f, (float)renderEngine.width, 0.0f, (float)renderEngine.height, 10.0f, -10.0f);
+    projection = glm::ortho(0.0f, (float)renderEngine.width, 0.0f, (float)renderEngine.height, 10.0f, -10.0f);
     renderEngine.set_shader_variable(shader, "projectMatrix", &projection, 0, sizeof(projection));
     renderEngine.set_shader_variable(shader2, "projectMatrix", &projection, 0, sizeof(projection));
     renderEngine.set_shader_variable(shader3, "projectMatrix", &projection, 0, sizeof(projection));
@@ -108,6 +108,15 @@ gui_resource_handle GuiEngine::getShader(const std::string& shaderName) {
     return res->second;
 }
 
+gui_resource_handle GuiEngine::getOrCreateShader(const std::string& shaderName, const std::string& vertex, const std::string& fragment, ShaderLanguage lang, const std::function<void(GuiEngine&, gui_resource_handle)>& initFunc) {
+    gui_resource_handle handle = getShader(shaderName);
+    if(handle == 0) {
+        handle = createShader(vertex, fragment, lang, shaderName);
+        initFunc(*this, handle);
+    }
+    return handle;
+}
+
 void GuiEngine::render(double frameTime, double x, double y) {
     std::for_each(guiObjects.rbegin(), guiObjects.rend(), [frameTime, x, y](GuiObject* object) {
         object->render(frameTime, x, y);
@@ -144,4 +153,8 @@ const RenderEngine& GuiEngine::getRenderEngine() {
 
 gui_resource_handle GuiEngine::getDefaultMesh() {
     return default_mesh;
+}
+
+const glm::mat4& GuiEngine::getProjectionMatrix() {
+    return projection;
 }
