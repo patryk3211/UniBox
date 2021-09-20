@@ -11,7 +11,7 @@ using namespace unibox::util;
 
 FT_Library Font::library = 0;
 
-Font::Font(const std::string& filename, unsigned int characterHeight) : atlas(0, 0, false) {
+Font::Font(const std::string& filename, unsigned int characterHeight) : atlas(0, 0, false), fontSize(characterHeight) {
     if(library == 0) {
         FT_Error error = FT_Init_FreeType(&library);
         if(error) {
@@ -62,7 +62,7 @@ const FT_Bitmap* Font::getBitmap(FT_ULong c) const {
     return &fontface->glyph->bitmap;
 }
 
-void Font::bakeAtlas() {
+void Font::bakeAtlas(bool distanceField) {
     if(atlas.isFinished()) return;
     spdlog::info("Font texture atlas bake started.");
     auto start = std::chrono::high_resolution_clock::now();
@@ -70,7 +70,7 @@ void Font::bakeAtlas() {
     struct CharToResolve {
         FT_ULong character;
 
-        VariableTextureAtlas::Coordinate coordinate;
+        VariableTextureAtlas<unsigned int>::Coordinate coordinate;
 
         float left;
         float top;
@@ -96,22 +96,22 @@ void Font::bakeAtlas() {
             CharToResolve res = { 
                 c,
                 atlas.storeTexture(bitmap->width, bitmap->rows, img),
-                fontface->glyph->bitmap_left,
-                fontface->glyph->bitmap_top,
-                fontface->glyph->bitmap.width,
-                fontface->glyph->bitmap.rows,
-                fontface->glyph->advance.x/64
+                fontface->glyph->bitmap_left/fontSize,
+                fontface->glyph->bitmap_top/fontSize,
+                fontface->glyph->bitmap.width/fontSize,
+                fontface->glyph->bitmap.rows/fontSize,
+                fontface->glyph->advance.x/64/fontSize
             };
             toResolve.push_back(res);
         } else {
             Character chara = {
                 c,
                 { 0, 0, 0, 0 },
-                fontface->glyph->bitmap_left,
-                fontface->glyph->bitmap_top,
+                fontface->glyph->bitmap_left/fontSize,
+                fontface->glyph->bitmap_top/fontSize,
                 0,
                 0,
-                fontface->glyph->advance.x/64
+                fontface->glyph->advance.x/64/fontSize
             };
             characterMap.insert({ c, chara });
         }
@@ -148,6 +148,10 @@ const Character& Font::getCharacter(FT_ULong c) const {
     return characterMap.at(c);
 }
 
-const VariableTextureAtlas& Font::getAtlas() const {
+const VariableTextureAtlas<unsigned int>& Font::getAtlas() const {
     return atlas;
+}
+
+float Font::getFontSize() const {
+    return fontSize;
 }
