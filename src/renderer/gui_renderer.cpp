@@ -524,15 +524,28 @@ GuiRenderer::GuiRenderer(uint width, uint height, Window& window) : window(windo
     // Create Texture
     functions.create_texture = [&](uint width, uint height, const void* data, ImageFormat format, ImageFilter minFilter, ImageFilter magFilter) {
         VkFormat formatVk;
+        int formatSize = 0;
         switch(format) {
-            case R8G8B8A8: formatVk = VK_FORMAT_R8G8B8A8_SRGB; break;
-            case R8G8B8: formatVk = VK_FORMAT_R8G8B8_SRGB; break;
-            case R8G8: formatVk = VK_FORMAT_R8G8_SRGB; break;
-            case R8: formatVk = VK_FORMAT_R8_SRGB; break;
+            case R8G8B8A8:
+                formatVk = VK_FORMAT_R8G8B8A8_SRGB;
+                formatSize = 4;
+                break;
+            case R8G8B8:
+                formatVk = VK_FORMAT_R8G8B8_SRGB;
+                formatSize = 3;
+                break;
+            case R8G8:
+                formatVk = VK_FORMAT_R8G8_SRGB;
+                formatSize = 2;
+                break;
+            case R8:
+                formatVk = VK_FORMAT_R8_SRGB;
+                formatSize = 1;
+                break;
             default: return (gui_resource_handle)0;
         }
         Image* img = new Image(width, height, VK_IMAGE_USAGE_SAMPLED_BIT, VK_SHARING_MODE_EXCLUSIVE, formatVk, VK_IMAGE_TILING_OPTIMAL);
-        img->loadImage(data, (width*height)*4);
+        img->loadImage(data, (width*height)*formatSize);
         VkFilter minFilt;
         VkFilter magFilt;
         switch(minFilter) {
