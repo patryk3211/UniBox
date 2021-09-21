@@ -46,21 +46,21 @@ ElementBar::ElementBar(gui::GuiEngine& engine) :
     GuiObject(engine, engine.getShader("default_colored_shader"), 0,
         engine.getWidth()/2, engine.getHeight()/2,
         engine.getWidth(), engine.getHeight()),/*2, 1.2*/
-    slotTexture(engine.createTexture("resources/gui/textures/element_slot.png")),
-    font("resources/gui/fonts/Ubuntu-R.ttf", 64) {
+    slotTexture(engine.createTexture("resources/gui/textures/element_slot.png")) {
+    /*font("resources/gui/fonts/pixelfont.ttf", 64)
     font.bakeAtlas();
 
-    fontAtlas = GuiObject::renderEngine.create_texture(font.getAtlas().getWidth(), font.getAtlas().getHeight(), font.getAtlas().getAtlasData(), gui::NEAREST, gui::NEAREST);
+    fontAtlas = GuiObject::renderEngine.create_texture(font.getAtlas().getWidth(), font.getAtlas().getHeight(), font.getAtlas().getAtlasData(), gui::R8, gui::NEAREST, gui::NEAREST);
     util::Text text = util::Text(font, "Test Text");
-    textRO = GuiObject::renderEngine.create_render_object(engine.getShader("default_textured_shader"));
+    textRO = GuiObject::renderEngine.create_render_object(engine.getOrCreateShader("font_shader", "shaders/gui/font/vertex.spv", "shaders/gui/font/fragment.spv", gui::SPIRV, [](gui::GuiEngine& engine, gui::gui_resource_handle shader) { engine.getRenderEngine().setShaderVariable(shader, "projectMatrix", engine.getProjectionMatrix()); }));
     gui::gui_resource_handle mesh = GuiObject::renderEngine.create_mesh();
     GuiObject::renderEngine.add_mesh_vertex_data(mesh, text.getMeshVec(), text.getVertexCount());
-    GuiObject::renderEngine.attach_mesh(textRO, mesh);
+    GuiObject::renderEngine.attach_mesh(textRO, mesh);*/
 
     // Create the icon atlas.
     uint width, height;
     void* pixels = Particle::getIconImage(&width, &height);
-    iconAtlas = GuiObject::renderEngine.create_texture(width, height, pixels, gui::NEAREST, gui::NEAREST);
+    iconAtlas = GuiObject::renderEngine.create_texture(width, height, pixels, gui::R8G8B8A8, gui::NEAREST, gui::NEAREST);
 
     { // Create the hotbar
         uint hotbarStart = guiEngine.getWidth()/2-(10*60/2);
@@ -85,7 +85,8 @@ void ElementBar::render(double frameTime, double x, double y) {
         hotbar[i]->render();
     }
 
-    GuiObject::renderEngine.setShaderVariable(textRO, "transformMatrix", glm::translate(glm::mat4(1), glm::vec3(guiEngine.getWidth()/2, guiEngine.getHeight()/2, 0)));
+    /*GuiObject::renderEngine.setShaderVariable(textRO, "transformMatrix", glm::scale(glm::translate(glm::mat4(1), glm::vec3(guiEngine.getWidth()/2, guiEngine.getHeight()/2, 0)), glm::vec3(100, 100, 1)));
     GuiObject::renderEngine.bind_texture_to_descriptor(textRO, "texture0", fontAtlas);
-    GuiObject::renderEngine.render_object(textRO);
+    GuiObject::renderEngine.setShaderVariable(textRO, "color", glm::vec4(1, 1, 1, 1));
+    GuiObject::renderEngine.render_object(textRO);*/
 }

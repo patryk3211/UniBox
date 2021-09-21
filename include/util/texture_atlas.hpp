@@ -64,12 +64,12 @@ namespace unibox {
         
         std::vector<std::vector<T>> data;
         std::vector<UsageLine> freeMap;
-        T* finishedData;
+        std::vector<T> finishedData;
 
         unsigned int width;
         unsigned int height;
 
-        bool isFree(unsigned int x, unsigned int y) {
+        bool isFree1(unsigned int x, unsigned int y) {
             if(!modifiable) return false;
             if(y >= height || x >= width) return false;
             return freeMap[y].freeBitmap[x] == 0;
@@ -79,7 +79,7 @@ namespace unibox {
             if(!modifiable) return false;
             for(unsigned int i = 0; i < width; i++) {
                 for(unsigned int j = 0; j < height; j++) {
-                    if(!isFree(x+i, y+j)) return false;
+                    if(!isFree1(x+i, y+j)) return false;
                 }
             }
             return true;
@@ -123,14 +123,11 @@ namespace unibox {
             modifiable = true;
             enlarge(initialWidth, initialHeight);
 
-            finishedData = 0;
             this->precisePacking = precisePacking;
         }
-        ~VariableTextureAtlas() {
-            if(finishedData != 0) delete[] finishedData;
-        }
+        ~VariableTextureAtlas() { }
 
-        Coordinate storeTexture(unsigned int width, unsigned int height, const void* data) {
+        Coordinate storeTexture(unsigned int width, unsigned int height, const void* data) { // Need to rewrite this, it's very inefficient.
             if(!modifiable) return { 0, 0, 0, 0 };
             const T* data_t = (const T*)data;
             for(unsigned int y = 0; y < this->height; y++) {
@@ -177,12 +174,12 @@ namespace unibox {
             return storeTexture(width, height, data); // Try to store again.
         }
 
-        void* getAtlasData() const {
+        const void* getAtlasData() const {
             if(modifiable) {
                 spdlog::error("Cannot take the data of an unfinished variable texture atlas.");
                 return 0;
             }
-            return finishedData;
+            return finishedData.data();
         }
 
         unsigned int getWidth() const { return width; }
@@ -192,12 +189,13 @@ namespace unibox {
             if(!modifiable) return;
             modifiable = false;
             freeMap.clear();
-            finishedData = new T[width*height];
+            finishedData.resize(width*height); //= new T[width*height];
             for(unsigned int j = 0; j < height; j++) {
                 for(unsigned int i = 0; i < width; i++) {
                     finishedData[i+j*width] = data[j][i];
                 }
             }
+            data.clear();
         }
         bool isFinished() const { return !modifiable; }
     };

@@ -29,16 +29,18 @@ set(SOURCES src/main.cpp
             src/util/base64.cpp
             src/util/font.cpp
             src/util/text.cpp
+            src/util/global_resources.cpp
             src/cl-engine/engine.cpp
             src/gui-engine/engine.cpp
             src/gui-engine/object.cpp
             src/gui-engine/image.cpp
             src/gui-engine/button.cpp
             src/guis/element_bar.cpp
+            src/guis/tooltip.cpp
             src/spirv_reflect.c
             src/stb/stb_image.c)
 
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -g)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 
 add_executable(unibox ${SOURCES})
 set_property(TARGET unibox PROPERTY CXX_STANDARD 17)

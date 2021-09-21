@@ -8,12 +8,14 @@
 #include <simulator/particle_grid.hpp>
 #include <cl-engine/engine.hpp>
 #include <util/finalizer.hpp>
+#include <util/global_resources.hpp>
+#include <util/font.hpp>
 
 #include <gui-engine/engine.hpp>
 #include <renderer/gui_renderer.hpp>
 #include <guis/element_bar.hpp>
 
-#include <util/font.hpp>
+#include <guis/tooltip.hpp>
 
 #include <chrono>
 #include <future>
@@ -27,9 +29,7 @@ int main(int argc, char** argv) {
     spdlog::info("Welcome to UniBox!");
 
     Finalizer* finalizer = new Finalizer();
-
-    /*util::Font fo("resources/gui/fonts/Ubuntu-R.ttf", 64);
-    fo.bakeAtlas();*/
+    util::GlobalResources resourceManager = util::GlobalResources();
 
     ClEngine clEngine = ClEngine();
 
@@ -42,9 +42,21 @@ int main(int argc, char** argv) {
     renderer.addRenderCallback([&guiEngine](double time, double x, double y) { guiEngine.render(time, x, y); });
     window.addMouseDownCallback([&guiEngine](double x, double y, int b) { guiEngine.onMouseDown(x, y, b); });
     window.addMouseUpCallback([&guiEngine](double x, double y, int b) { guiEngine.onMouseUp(x, y, b); });
+    
+    {
+        util::Font font("resources/gui/fonts/pixelfont.ttf", 56);
+        font.bakeAtlas();
+        resourceManager.store("pixel_font", font);
+        resourceManager.link("main_font", "pixel_font");
 
-    gui::gui_resource_handle tex = guiEngine.createTexture("resources/gui/textures/material_select_button_64.png");
-    gui::gui_resource_handle tex2 = guiEngine.createTexture("resources/gui/textures/material_select_button_hover_64.png");
+        auto& atlas = font.getAtlas();
+        gui::gui_resource_handle tex = guiEngine.getRenderEngine().create_texture(atlas.getWidth(), atlas.getHeight(), atlas.getAtlasData(), gui::R8, gui::LINEAR, gui::NEAREST);
+        resourceManager.store("pixel_font_handle", tex);
+        resourceManager.link("main_font_handle", "pixel_font_handle");
+    }
+
+    //gui::gui_resource_handle tex = guiEngine.createTexture("resources/gui/textures/material_select_button_64.png");
+    //gui::gui_resource_handle tex2 = guiEngine.createTexture("resources/gui/textures/material_select_button_hover_64.png");
     //gui::Button but = gui::Button(guiEngine, guiEngine.getShader("default_textured_shader"), tex, tex2, tex, 1280/2, 720/2, 64, 64);
 
     float zoom = 600.0f;
@@ -67,6 +79,7 @@ int main(int argc, char** argv) {
     ParticleGrid* grid = new ParticleGrid(1024, 1024, 1);
 
     ElementBar bar = ElementBar(guiEngine);
+    Tooltip tt = Tooltip("main_font", guiEngine, 8.0f, /*100, 100,*/ "Test");
 
     spdlog::info("Random gen start");
     {

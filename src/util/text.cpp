@@ -25,6 +25,7 @@ Text::~Text() { }
 void Text::generateMesh() {
     mesh.clear();
     glm::vec2 offset = glm::vec2(0, 0);
+    height = 0;
     for(int i = 0; i < value.size(); i++) {
         auto& c = font.getCharacter(value[i]);
         glm::vec2 startPos = offset + glm::vec2(c.left, -c.top);
@@ -33,6 +34,7 @@ void Text::generateMesh() {
         mesh.push_back(rect);
         offset.x += c.advance;
     }
+    length = offset.x;
 }
 
 void Text::setText(const std::string& str) {
@@ -55,4 +57,12 @@ std::vector<unsigned char> Text::getMeshVec() {
 
 unsigned int Text::getVertexCount() {
     return mesh.size()*6;
+}
+
+float Text::getMeshLength() {
+    return length;
+}
+
+float Text::getMeshHeight() {
+    return height;
 }

@@ -25,6 +25,8 @@ namespace unibox::util {
         std::string value;
 
         std::vector<Rect> mesh;
+        float length;
+        float height;
 
         void generateMesh();
     public:
@@ -36,5 +38,7 @@ namespace unibox::util {
         std::vector<unsigned char> getMeshVec();
 
         unsigned int getVertexCount();
+        float getMeshLength();
+        float getMeshHeight();
     };
 }

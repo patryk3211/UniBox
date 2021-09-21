@@ -28,7 +28,6 @@ namespace unibox {
             void render();
         };
 
-        util::Font font;
         gui::gui_resource_handle fontAtlas;
         gui::gui_resource_handle textRO;
 
