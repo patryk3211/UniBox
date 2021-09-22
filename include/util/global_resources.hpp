@@ -21,14 +21,14 @@ namespace unibox::util {
 
             ~Resource() { if(destructor) (*destructor)(*this); }
 
-            template<typename T> const std::optional<T> get() const {
-                if(type == typeid(T)) return std::any_cast<T>(value);
+            template<typename T> const std::optional<std::reference_wrapper<T>> get() const {
+                if(type == typeid(T)) return std::any_cast<T&>(value);
                 else if(type == typeid(Resource*)) return std::any_cast<Resource*>(value)->get<T>();
                 return std::nullopt;
             }
 
-            template<typename T> std::optional<T> get() {
-                if(type == typeid(T)) return std::any_cast<T>(value);
+            template<typename T> std::optional<std::reference_wrapper<T>> get() {
+                if(type == typeid(T)) return std::any_cast<T&>(value);
                 else if(type == typeid(Resource*)) return std::any_cast<Resource*>(value)->get<T>();
                 return std::nullopt;
             }
@@ -49,7 +49,7 @@ namespace unibox::util {
         template<typename T> void store(const std::string& id, const T& value, const std::function<void(const Resource&)> destructor)
         { resources.insert({ id, new Resource(value, destructor) }); }
 
-        template<typename T> std::optional<T> get(const std::string& id) {
+        template<typename T> std::optional<std::reference_wrapper<T>> get(const std::string& id) {
             auto res = resources.find(id);
             if(res == resources.end()) return std::nullopt;
             return res->second->get<T>();
