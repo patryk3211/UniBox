@@ -37,6 +37,8 @@ namespace unibox::gui {
         int getLayer();
         void setLayer(int layer);
 
+        void removeFromAutoRender();
+
         gui_resource_handle getShader();
         gui_resource_handle getMesh();
         gui_resource_handle getRenderObject();

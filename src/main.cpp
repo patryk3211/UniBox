@@ -79,7 +79,6 @@ int main(int argc, char** argv) {
     ParticleGrid* grid = new ParticleGrid(1024, 1024, 1);
 
     ElementBar bar = ElementBar(guiEngine);
-    Tooltip tt = Tooltip("main_font", guiEngine, 8.0f, /*100, 100,*/ "Very long test text,\nmultiline test.\nNew Line.");
 
     spdlog::info("Random gen start");
     {
@@ -148,7 +147,6 @@ int main(int argc, char** argv) {
 
     while(!window.shouldClose()) {
         window.frameStart();
-        tt.setText(std::to_string(f));
         if(f == 0) {
             auto now = std::chrono::high_resolution_clock::now();
             auto dur = std::chrono::duration_cast<std::chrono::microseconds>(now-last);

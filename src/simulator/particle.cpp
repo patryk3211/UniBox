@@ -232,6 +232,14 @@ Particle::~Particle() {
 
 }
 
+const std::string& Particle::getDisplayName() {
+    return displayName;
+}
+
+const std::string& Particle::getDescription() {
+    return description;
+}
+
 const TextureAtlas::Coordinate& Particle::getTextureAtlasIcon() {
     return iconCoordinates;
 }

@@ -1,12 +1,14 @@
 #include <guis/element_bar.hpp>
 
 #include <gui-engine/engine.hpp>
-
 #include <glm/gtc/matrix_transform.hpp>
 
 using namespace unibox;
 
 ElementBar::HotbarSlot::HotbarSlot(uint x, uint y, gui::GuiEngine& engine, gui::gui_resource_handle backgroundTexture, gui::gui_resource_handle iconTextureAtlas) : guiEngine(engine), renderEngine(engine.getRenderEngine()) {
+    this->x = x;
+    this->y = y;
+
     transform = glm::scale(glm::translate(glm::mat4(1), glm::vec3(x, y, 0)), glm::vec3(64, 64, 1));
     isSelected = false;
     // Create render objects
@@ -25,6 +27,10 @@ ElementBar::HotbarSlot::HotbarSlot(uint x, uint y, gui::GuiEngine& engine, gui::
 
 ElementBar::HotbarSlot::~HotbarSlot() {
     renderEngine.destroy_resource(background_RO);
+}
+
+bool ElementBar::HotbarSlot::isInside(double x, double y) {
+    return x >= this->x-24 && y >= this->y-24 && x < this->x+24 && y < this->y+24;
 }
 
 void ElementBar::HotbarSlot::render() {
@@ -46,16 +52,9 @@ ElementBar::ElementBar(gui::GuiEngine& engine) :
     GuiObject(engine, engine.getShader("default_colored_shader"), 0,
         engine.getWidth()/2, engine.getHeight()/2,
         engine.getWidth(), engine.getHeight()),/*2, 1.2*/
-    slotTexture(engine.createTexture("resources/gui/textures/element_slot.png")) {
-    /*font("resources/gui/fonts/pixelfont.ttf", 64)
-    font.bakeAtlas();
-
-    fontAtlas = GuiObject::renderEngine.create_texture(font.getAtlas().getWidth(), font.getAtlas().getHeight(), font.getAtlas().getAtlasData(), gui::R8, gui::NEAREST, gui::NEAREST);
-    util::Text text = util::Text(font, "Test Text");
-    textRO = GuiObject::renderEngine.create_render_object(engine.getOrCreateShader("font_shader", "shaders/gui/font/vertex.spv", "shaders/gui/font/fragment.spv", gui::SPIRV, [](gui::GuiEngine& engine, gui::gui_resource_handle shader) { engine.getRenderEngine().setShaderVariable(shader, "projectMatrix", engine.getProjectionMatrix()); }));
-    gui::gui_resource_handle mesh = GuiObject::renderEngine.create_mesh();
-    GuiObject::renderEngine.add_mesh_vertex_data(mesh, text.getMeshVec(), text.getVertexCount());
-    GuiObject::renderEngine.attach_mesh(textRO, mesh);*/
+    slotTexture(engine.createTexture("resources/gui/textures/element_slot.png")),
+    tooltip("main_font", engine, 8.0f, "tooltip") {
+    tooltip.removeFromAutoRender();
 
     // Create the icon atlas.
     uint width, height;
@@ -77,16 +76,20 @@ ElementBar::ElementBar(gui::GuiEngine& engine) :
 
 ElementBar::~ElementBar() {
     GuiObject::renderEngine.destroy_resource(iconAtlas);
+    GuiObject::renderEngine.destroy_resource(slotTexture);
     for(int i = 0; i < 10; i++) delete hotbar[i];
 }
 
 void ElementBar::render(double frameTime, double x, double y) {
+    bool found = false;
     for(int i = 0; i < 10; i++) {
         hotbar[i]->render();
+        if(!found && hotbar[i]->particle != 0 && hotbar[i]->isInside(x, y)) {
+            found = true;
+            tooltip.setText(hotbar[i]->particle->getDisplayName());
+            tooltip.setVisible(true);
+        }
     }
-
-    /*GuiObject::renderEngine.setShaderVariable(textRO, "transformMatrix", glm::scale(glm::translate(glm::mat4(1), glm::vec3(guiEngine.getWidth()/2, guiEngine.getHeight()/2, 0)), glm::vec3(100, 100, 1)));
-    GuiObject::renderEngine.bind_texture_to_descriptor(textRO, "texture0", fontAtlas);
-    GuiObject::renderEngine.setShaderVariable(textRO, "color", glm::vec4(1, 1, 1, 1));
-    GuiObject::renderEngine.render_object(textRO);*/
+    if(!found) tooltip.setVisible(false);
+    tooltip.render(frameTime, x, y);
 }

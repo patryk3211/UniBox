@@ -99,6 +99,9 @@ namespace unibox {
 
         bool isValid();
 
+        const std::string& getDisplayName();
+        const std::string& getDescription();
+
         static Particle& getParticle(const std::string& name);
         static uint getParticleId(const std::string& name);
         static void loadParticle(const std::string& name, const std::string& particleDir);

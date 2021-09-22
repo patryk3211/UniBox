@@ -26,7 +26,7 @@ GuiObject::GuiObject(GuiEngine& engine, gui_resource_handle shader, int layer, d
 }
 
 GuiObject::~GuiObject() {
-    guiEngine.removeItem(handle);
+    if(handle > 0) guiEngine.removeItem(handle);
     renderEngine.destroy_resource(renderObjectHandle);
 }
 
@@ -109,4 +109,11 @@ bool GuiObject::operator==(const GuiObject& other) {
 
 bool GuiObject::isInside(double x, double y) {
     return x >= posX-scaleX/2 && y >= posY-scaleY/2 && x <= posX+scaleX/2 && y <= posY+scaleY;
+}
+
+void GuiObject::removeFromAutoRender() {
+    if(handle > 0) {
+        guiEngine.removeItem(handle);
+        handle = 0;
+    }
 }

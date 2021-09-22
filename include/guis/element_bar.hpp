@@ -3,8 +3,7 @@
 #include <gui-engine/object.hpp>
 #include <simulator/particle.hpp>
 #include <glm/mat4x4.hpp>
-
-#include <util/text.hpp>
+#include <guis/tooltip.hpp>
 
 namespace unibox {
     class ElementBar : public gui::GuiObject {
@@ -20,21 +19,25 @@ namespace unibox {
             gui::gui_resource_handle background_TEX;
             gui::gui_resource_handle icon_TEX;
 
+            uint x;
+            uint y;
+
             Particle* particle;
 
             HotbarSlot(uint x, uint y, gui::GuiEngine& engine, gui::gui_resource_handle backgroundTexture, gui::gui_resource_handle iconTextureAtlas);
             ~HotbarSlot();
 
             void render();
-        };
 
-        gui::gui_resource_handle fontAtlas;
-        gui::gui_resource_handle textRO;
+            bool isInside(double x, double y);
+        };
 
         gui::gui_resource_handle iconAtlas;
         gui::gui_resource_handle slotTexture;
 
         HotbarSlot* hotbar[10];
+
+        Tooltip tooltip;
     public:
         ElementBar(gui::GuiEngine& engine);
         ~ElementBar();
