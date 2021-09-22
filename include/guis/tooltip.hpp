@@ -21,6 +21,8 @@ namespace unibox {
         util::Text textObj;
         float textSize;
 
+        bool visible;
+
         static void ShaderInitFunc(gui::GuiEngine& engine, gui::gui_resource_handle handle);
 
         void init(const std::string& font_name);
@@ -28,6 +30,9 @@ namespace unibox {
         Tooltip(const std::string& font_name, gui::GuiEngine& engine, float textSize, const std::string& text);
         Tooltip(const std::string& font_name, gui::GuiEngine& engine, float textSize, float x, float y, const std::string& text);
         ~Tooltip();
+
+        void setVisible(bool value);
+        void setText(const std::string& text);
 
         virtual void render(double frameTime, double x, double y);
     };

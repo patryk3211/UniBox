@@ -15,6 +15,8 @@ void Tooltip::ShaderInitFunc(gui::GuiEngine& engine, gui::gui_resource_handle ha
 void Tooltip::init(const std::string& font_name) {
     if(textureHandle == 0) textureHandle = guiEngine.createTexture("resources/gui/textures/tooltip_frame.png");
 
+    this->visible = true;
+
     this->text = text;
     meshHandle = renderEngine.create_mesh();
     renderEngine.add_mesh_vertex_data(meshHandle, textObj.getMeshVec(), textObj.getVertexCount());
@@ -50,16 +52,31 @@ Tooltip::~Tooltip() {
     renderEngine.destroy_resource(meshHandle);
 }
 
+void Tooltip::setVisible(bool value) {
+    this->visible = value;
+}
+
+void Tooltip::setText(const std::string& text) {
+    textObj.setText(text);
+    renderEngine.add_mesh_vertex_data(meshHandle, textObj.getMeshVec(), textObj.getVertexCount());
+
+    GuiObject::setWidth(textSize*textObj.getMeshLength()+6*2);
+    GuiObject::setHeight(textSize*textObj.getMeshHeight()+6*2+.15f);
+}
+
 void Tooltip::render(double frameTime, double x, double y) {
-    auto pos = position.value_or(glm::vec2(x+textObj.getMeshLength()*textSize/2+12, y+textObj.getMeshHeight()*textSize/2+9));
-    GuiObject::setX(pos.x);
-    GuiObject::setY(pos.y);
+    if(visible) {
+        auto pos = position.value_or(glm::vec2(x+textObj.getMeshLength()*textSize/2+12, y+textSize/2+9));
+        GuiObject::setX(pos.x);
+        GuiObject::setY(pos.y);
 
-    renderEngine.bind_texture_to_descriptor(GuiObject::getRenderObject(), "texture0", textureHandle);
-    GuiObject::render(frameTime, x, y);
+        renderEngine.bind_texture_to_descriptor(GuiObject::getRenderObject(), "texture0", textureHandle);
+        GuiObject::render(frameTime, x, y);
 
-    renderEngine.bind_texture_to_descriptor(textObjRO, "texture0", fontTex);
-    renderEngine.setShaderVariable(textObjRO, "transformMatrix", glm::scale(glm::translate(glm::mat4(1), glm::vec3(pos.x-textObj.getMeshLength()*textSize/2, pos.y, 0)), glm::vec3(textSize, textSize, 1)));
-    renderEngine.setShaderVariable(textObjRO, "color", glm::vec4(1, 1, 1, 1));
-    renderEngine.render_object(textObjRO);
+        renderEngine.bind_texture_to_descriptor(textObjRO, "texture0", fontTex);
+        int offset = (int)((2-textObj.getMeshHeight())*textSize/2);
+        renderEngine.setShaderVariable(textObjRO, "transformMatrix", glm::scale(glm::translate(glm::mat4(1), glm::vec3(pos.x-textObj.getMeshLength()*textSize/2, pos.y+offset, 0)), glm::vec3(textSize, textSize, 1)));
+        renderEngine.setShaderVariable(textObjRO, "color", glm::vec4(1, 1, 1, 1));
+        renderEngine.render_object(textObjRO);
+    }
 }
