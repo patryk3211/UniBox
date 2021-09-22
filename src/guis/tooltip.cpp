@@ -20,7 +20,7 @@ void Tooltip::init(const std::string& font_name) {
     renderEngine.add_mesh_vertex_data(meshHandle, textObj.getMeshVec(), textObj.getVertexCount());
 
     GuiObject::setWidth(textSize*textObj.getMeshLength()+6*2);
-    GuiObject::setHeight(textSize+6*2);
+    GuiObject::setHeight(textSize*textObj.getMeshHeight()+6*2+.15f);
 
     textObjRO = renderEngine.create_render_object(guiEngine.getOrCreateShader("font_shader", "shaders/gui/font/vertex.spv", "shaders/gui/font/fragment.spv", gui::SPIRV, ShaderInitFunc));
     renderEngine.attach_mesh(textObjRO, meshHandle);
@@ -30,7 +30,7 @@ void Tooltip::init(const std::string& font_name) {
 
 Tooltip::Tooltip(const std::string& font_name, gui::GuiEngine& engine, float textSize, const std::string& text) : 
     GuiObject(engine, engine.getOrCreateShader("tooltip_frame_shader", "shaders/gui/tooltip/vertex.spv", "shaders/gui/tooltip/fragment.spv", gui::SPIRV, ShaderInitFunc), 0, 100, 100, 64, 64),
-    textObj(*util::GlobalResources::getInstance()->get<util::Font>(font_name), text) {
+    textObj(*util::GlobalResources::getInstance()->get<util::Font>(font_name), text, .15f) {
     this->textSize = textSize;
     position = std::nullopt;
 
@@ -39,7 +39,7 @@ Tooltip::Tooltip(const std::string& font_name, gui::GuiEngine& engine, float tex
 
 Tooltip::Tooltip(const std::string& font_name, gui::GuiEngine& engine, float textSize, float x, float y, const std::string& text) :
     GuiObject(engine, engine.getOrCreateShader("tooltip_frame_shader", "shaders/gui/tooltip/vertex.spv", "shaders/gui/tooltip/fragment.spv", gui::SPIRV, ShaderInitFunc), 0, x, y, 128, 128),
-    textObj(*util::GlobalResources::getInstance()->get<util::Font>(font_name), text) {
+    textObj(*util::GlobalResources::getInstance()->get<util::Font>(font_name), text, .15f) {
     this->textSize = textSize;
     position = std::optional(glm::vec2(x, y));
 
@@ -51,7 +51,7 @@ Tooltip::~Tooltip() {
 }
 
 void Tooltip::render(double frameTime, double x, double y) {
-    auto pos = position.value_or(glm::vec2(x+textObj.getMeshLength()*textSize/2+12, y+textSize/2+9));
+    auto pos = position.value_or(glm::vec2(x+textObj.getMeshLength()*textSize/2+12, y+textObj.getMeshHeight()*textSize/2+9));
     GuiObject::setX(pos.x);
     GuiObject::setY(pos.y);
 
@@ -59,7 +59,7 @@ void Tooltip::render(double frameTime, double x, double y) {
     GuiObject::render(frameTime, x, y);
 
     renderEngine.bind_texture_to_descriptor(textObjRO, "texture0", fontTex);
-    renderEngine.setShaderVariable(textObjRO, "transformMatrix", glm::scale(glm::translate(glm::mat4(1), glm::vec3(pos.x-textObj.getMeshLength()*textSize/2, pos.y+textSize/2, 0)), glm::vec3(textSize, textSize, 1)));
+    renderEngine.setShaderVariable(textObjRO, "transformMatrix", glm::scale(glm::translate(glm::mat4(1), glm::vec3(pos.x-textObj.getMeshLength()*textSize/2, pos.y, 0)), glm::vec3(textSize, textSize, 1)));
     renderEngine.setShaderVariable(textObjRO, "color", glm::vec4(1, 1, 1, 1));
     renderEngine.render_object(textObjRO);
 }

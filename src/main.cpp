@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
     ParticleGrid* grid = new ParticleGrid(1024, 1024, 1);
 
     ElementBar bar = ElementBar(guiEngine);
-    Tooltip tt = Tooltip("main_font", guiEngine, 8.0f, /*100, 100,*/ "Test");
+    Tooltip tt = Tooltip("main_font", guiEngine, 8.0f, /*100, 100,*/ "Very long test text,\nmultiline test.");
 
     spdlog::info("Random gen start");
     {

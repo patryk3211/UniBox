@@ -19,22 +19,33 @@ Text::Rect::Rect(glm::vec2 start, glm::vec2 end, glm::vec2 uvStart, glm::vec2 uv
     vertices[5].uv = { uvStart.x+uvSize.x, uvStart.y+uvSize.y };
 }
 
-Text::Text(const Font& font, const std::string& str) : font(font), value(str) { generateMesh(); }
+Text::Text(const Font& font, const std::string& str, float lineSpacing) : font(font), value(str), lineSpacing(lineSpacing) { generateMesh(); }
 Text::~Text() { }
 
 void Text::generateMesh() {
     mesh.clear();
     glm::vec2 offset = glm::vec2(0, 0);
-    height = 0;
+    float lineHeight = 0;
+    length = 0;
     for(int i = 0; i < value.size(); i++) {
+        if(value[i] == '\n') {
+            offset.y += 1 + lineSpacing;
+            lineHeight = 0;
+            if(length < offset.x) length = offset.x;
+            offset.x = 0;
+            continue;
+        }
         auto& c = font.getCharacter(value[i]);
         glm::vec2 startPos = offset + glm::vec2(c.left, -c.top);
         glm::vec2 endPos = startPos + glm::vec2(c.width, c.height);
         Rect rect = Rect(startPos, endPos, glm::vec2(c.coords.x, c.coords.y), glm::vec2(c.coords.width, c.coords.height));
         mesh.push_back(rect);
         offset.x += c.advance;
+        if(lineHeight < c.height) lineHeight = c.height;
     }
-    length = offset.x;
+    height = offset.y;
+    height += lineHeight;
+    if(length < offset.x) length = offset.x;
 }
 
 void Text::setText(const std::string& str) {

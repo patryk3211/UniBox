@@ -23,6 +23,7 @@ namespace unibox::util {
         float height;
 
         float advance;
+        float advanceY;
     };
 
     class Font {

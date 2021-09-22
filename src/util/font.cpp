@@ -79,6 +79,7 @@ void Font::bakeAtlas() {
         float height;
 
         float advance;
+        float advanceY;
     };
     std::list<CharToResolve> toResolve;
 
@@ -100,7 +101,8 @@ void Font::bakeAtlas() {
                 fontface->glyph->bitmap_top/fontSize,
                 fontface->glyph->bitmap.width/fontSize,
                 fontface->glyph->bitmap.rows/fontSize,
-                fontface->glyph->advance.x/64/fontSize
+                fontface->glyph->advance.x/64/fontSize,
+                fontface->glyph->advance.y/64/fontSize
             };
             toResolve.push_back(res);
         } else {
@@ -111,7 +113,8 @@ void Font::bakeAtlas() {
                 fontface->glyph->bitmap_top/fontSize,
                 0,
                 0,
-                fontface->glyph->advance.x/64/fontSize
+                fontface->glyph->advance.x/64/fontSize,
+                fontface->glyph->advance.y/64/fontSize
             };
             characterMap.insert({ c, chara });
         }
@@ -128,7 +131,8 @@ void Font::bakeAtlas() {
             c.top,
             c.width,
             c.height,
-            c.advance
+            c.advance,
+            c.advanceY
         };
         characterMap.insert({ c.character, chara });
     }

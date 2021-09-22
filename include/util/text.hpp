@@ -28,9 +28,11 @@ namespace unibox::util {
         float length;
         float height;
 
+        float lineSpacing;
+
         void generateMesh();
     public:
-        Text(const Font& font, const std::string& str);
+        Text(const Font& font, const std::string& str, float lineSpacing);
         ~Text();
 
         void setText(const std::string& str);
