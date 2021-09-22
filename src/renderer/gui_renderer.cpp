@@ -458,7 +458,10 @@ GuiRenderer::GuiRenderer(uint width, uint height, Window& window) : window(windo
 
         Mesh* msh = meshRef.value();
         if(msh->indexBuffer == 0) msh->vertexCount = vertexCount;
-        if(msh->vertexBuffer != 0) delete msh->vertexBuffer;
+        if(msh->vertexBuffer != 0) { 
+            Buffer* buf = msh->vertexBuffer;
+            resourcesToDelete.push_back({ 5, [buf](){ delete buf; } }); // Wait 5 render cycles before deleting the buffer to make sure that it is not in use.
+        }
         msh->vertexBuffer = new Buffer(data.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_GPU_ONLY);
 
         Buffer srcBuf = Buffer(data.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_SHARING_MODE_EXCLUSIVE, VMA_MEMORY_USAGE_CPU_ONLY);
@@ -580,6 +583,7 @@ GuiRenderer::GuiRenderer(uint width, uint height, Window& window) : window(windo
 GuiRenderer::~GuiRenderer() {
     instance = 0;
     for(auto& [handle, resource] : resources) delete resource;
+    for(auto& resource : resourcesToDelete) resource.deleter();
 }
 
 void GuiRenderer::render(VkCommandBuffer cmd) {
@@ -588,6 +592,17 @@ void GuiRenderer::render(VkCommandBuffer cmd) {
         glm::vec2 cursor = window.getCursorPos();
         for(auto& callback : renderCallbacks) callback(1.667, cursor.x, cursor.y);
         finished = true;
+        // While the main thread is rendering update the delete list
+        auto it = resourcesToDelete.begin();
+        while(it != resourcesToDelete.end()) {
+            if(it->wait == 0) {
+                it->deleter();
+                resourcesToDelete.erase(it++);
+            } else { 
+                it->wait--;
+                it++;
+            }
+        }
     });
 
     GuiShader* shader = 0;

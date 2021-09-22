@@ -111,6 +111,11 @@ namespace unibox {
             GuiShader*& currentShader;
         };
 
+        struct ResourceDelete {
+            int wait;
+            std::function<void()> deleter;
+        };
+
         const std::type_info& RENDER_OBJECT = typeid(RenderObject);
         const std::type_info& MESH = typeid(Mesh);
         const std::type_info& SHADER = typeid(GuiShader);
@@ -123,6 +128,8 @@ namespace unibox {
         std::unordered_map<gui::gui_resource_handle, Resource*> resources;
 
         std::queue<std::function<void(RenderingState&, VkCommandBuffer cmd)>> renderActions;
+
+        std::list<ResourceDelete> resourcesToDelete;
 
         template<typename T> std::optional<T*> getResource(gui::gui_resource_handle handle) {
             auto resource = resources.find(handle);
