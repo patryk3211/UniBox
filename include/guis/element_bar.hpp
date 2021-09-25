@@ -12,7 +12,6 @@ namespace unibox {
             const gui::RenderEngine& renderEngine;
 
             glm::mat4 transform;
-            bool isSelected;
             gui::gui_resource_handle background_RO;
             gui::gui_resource_handle particle_icon_RO;
 
@@ -32,16 +31,24 @@ namespace unibox {
             bool isInside(double x, double y);
         };
 
+        gui::gui_resource_handle selectionRO;
+
         gui::gui_resource_handle iconAtlas;
         gui::gui_resource_handle slotTexture;
 
         HotbarSlot* hotbar[10];
+        uint selected;
+        glm::mat4 highlightMatrix;
 
         Tooltip tooltip;
     public:
         ElementBar(gui::GuiEngine& engine);
         ~ElementBar();
 
+        void setSelect(uint index);
+
         virtual void render(double frameTime, double x, double y);
+
+        virtual void mouseDown(double x, double y, int button);
     };
 }

@@ -10,7 +10,6 @@ ElementBar::HotbarSlot::HotbarSlot(uint x, uint y, gui::GuiEngine& engine, gui::
     this->y = y;
 
     transform = glm::scale(glm::translate(glm::mat4(1), glm::vec3(x, y, 0)), glm::vec3(64, 64, 1));
-    isSelected = false;
     // Create render objects
     background_RO = renderEngine.create_render_object(guiEngine.getShader("default_textured_shader"));
     particle_icon_RO = renderEngine.create_render_object(guiEngine.getShader("default_texture_atlas_shader"));
@@ -72,16 +71,30 @@ ElementBar::ElementBar(gui::GuiEngine& engine) :
         hotbar[3]->particle = &Particle::getParticle("unibox:gate");
         hotbar[4]->particle = &Particle::getParticle("unibox:spark");
     }
+    setSelect(0);
+
+    // Create the selected slot highlight.
+    selectionRO = GuiObject::renderEngine.create_render_object(engine.getShader("default_colored_shader"));
+    GuiObject::renderEngine.attach_mesh(selectionRO, engine.getDefaultMesh());
+    GuiObject::renderEngine.setShaderVariable(selectionRO, "color", glm::vec4(0.5, 0.5, 0.5, 0.05));
 }
 
 ElementBar::~ElementBar() {
     GuiObject::renderEngine.destroy_resource(iconAtlas);
     GuiObject::renderEngine.destroy_resource(slotTexture);
+    GuiObject::renderEngine.destroy_resource(selectionRO);
     for(int i = 0; i < 10; i++) delete hotbar[i];
+}
+
+void ElementBar::setSelect(uint index) {
+    this->selected = index;
+    highlightMatrix = glm::scale(glm::translate(glm::mat4(1), 
+    glm::vec3(hotbar[selected]->x, hotbar[selected]->y, 0)), glm::vec3(64, 64, 1));
 }
 
 void ElementBar::render(double frameTime, double x, double y) {
     bool found = false;
+    // Render the hotbar.
     for(int i = 0; i < 10; i++) {
         hotbar[i]->render();
         if(!found && hotbar[i]->particle != 0 && hotbar[i]->isInside(x, y)) {
@@ -90,6 +103,21 @@ void ElementBar::render(double frameTime, double x, double y) {
             tooltip.setVisible(true);
         }
     }
+    { // Render the highlight.
+        GuiObject::renderEngine.setShaderVariable(selectionRO, "transformMatrix", highlightMatrix);
+        GuiObject::renderEngine.render_object(selectionRO);
+    }
+
+    // Perhaps render the tooltip too.
     if(!found) tooltip.setVisible(false);
     tooltip.render(frameTime, x, y);
+}
+
+void ElementBar::mouseDown(double x, double y, int button) {
+    for(int i = 0; i < 10; i++) {
+        if(hotbar[i]->isInside(x, y)) {
+            setSelect(i);
+            break;
+        }
+    }
 }
