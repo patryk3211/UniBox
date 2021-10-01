@@ -113,11 +113,12 @@ void ElementBar::render(double frameTime, double x, double y) {
     tooltip.render(frameTime, x, y);
 }
 
-void ElementBar::mouseDown(double x, double y, int button) {
+bool ElementBar::mouseDown(double x, double y, int button) {
     for(int i = 0; i < 10; i++) {
         if(hotbar[i]->isInside(x, y)) {
             setSelect(i);
-            break;
+            return true;
         }
     }
+    return false;
 }

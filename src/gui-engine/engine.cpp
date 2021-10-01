@@ -131,19 +131,13 @@ gui_resource_handle GuiEngine::createTexture(const std::string& filepath) {
 
 void GuiEngine::onMouseDown(double x, double y, int button) {
     for(auto& object : guiObjects) {
-        if(object->isInside(x, y)) {
-            object->mouseDown(x, y, button);
-            break;
-        }
+        if(object->isInside(x, y) && object->mouseDown(x, y, button)) break;
     }
 }
 
 void GuiEngine::onMouseUp(double x, double y, int button) {
     for(auto& object : guiObjects) {
-        if(object->isInside(x, y)) {
-            object->mouseUp(x, y, button);
-            break;
-        }
+        if(object->isInside(x, y) && object->mouseUp(x, y, button)) break;
     }
 }
 

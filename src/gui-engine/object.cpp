@@ -60,8 +60,8 @@ void GuiObject::render(double frameTime, double x, double y) {
     renderEngine.render_object(renderObjectHandle);
 }
 
-void GuiObject::mouseDown(double x, double y, int button) { }
-void GuiObject::mouseUp(double x, double y, int button) { }
+bool GuiObject::mouseDown(double x, double y, int button) { return false; }
+bool GuiObject::mouseUp(double x, double y, int button) { return false; }
 
 double GuiObject::getX() {
     return posX;

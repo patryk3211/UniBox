@@ -44,11 +44,13 @@ void Button::render(double frameTime, double x, double y) {
     }
 }
 
-void Button::mouseDown(double x, double y, int button) {
+bool Button::mouseDown(double x, double y, int button) {
     if(button == 0) isClicked = true;
     for(auto& event : clickEvents) event(x, y, button);
+    return true;
 }
 
-void Button::mouseUp(double x, double y, int button) {
+bool Button::mouseUp(double x, double y, int button) {
     if(button == 0) isClicked = false;
+    return true;
 }
